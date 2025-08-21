@@ -23,4 +23,19 @@
         VALUES (#{userId}, #{password}, #{userName}, #{email}, SYSTIMESTAMP, SYSTIMESTAMP)
     </insert>
 
+    <!-- selectByUserId 메서드 추가 (로그인에 필요) -->
+    <select id="selectByUserId" resultMap="UserInfoMap">
+        SELECT user_id, password, user_name, email, created_at, updated_at
+        FROM USER_INFO
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="countByUserId" parameterType="string" resultType="int">
+        SELECT COUNT(*) FROM USER_INFO WHERE user_id = #{userId}
+    </select>
+
+    <select id="countByEmail" parameterType="string" resultType="int">
+        SELECT COUNT(*) FROM USER_INFO WHERE email = #{email}
+    </select>
+
 </mapper>
