@@ -27,10 +27,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filter)
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String requestURI = request.getRequestURI();
         log.debug("[JWT Filter] 요청 URI: {}", requestURI);
+
+        // 스웨거 및 공개 경로는 토큰 검증 없이 통과
+        if (isPublicPath(requestURI)) {
+            log.debug("[JWT Filter] 공개 경로로 인증 없이 통과: {}", requestURI);
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         if (request.getCookies() != null) {
             log.debug("[JWT Filter] 쿠키 개수: {}", request.getCookies().length);
@@ -40,27 +47,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } else {
             log.warn("[JWT Filter] 쿠키가 없습니다. URI: {}", requestURI);
         }
+
         String token = ExtractToken(request);
         log.debug("[JWT Filter] 추출된 토큰: {}", token != null ? "존재" : "없음");
 
         if (token != null) {
-
             if (!jwtTokenProvider.ValidateToken(token)) {
-                log.warn("[JWT Filter] 만료된 않은 JWT 토큰. URI: {}", request.getRequestURI());
+                log.warn("[JWT Filter] 유효하지 않은 JWT 토큰. URI: {}", request.getRequestURI());
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "유효하지 않은 JWT 토큰입니다.");
                 return;
             } else {
                 log.debug("[JWT Filter] 유효한 JWT 토큰. URI: {}", request.getRequestURI());
 
-                String userId = jwtTokenProvider.getClaim(token, "userId");
-                String userName = jwtTokenProvider.getClaim(token, "userName");
+                String userId = jwtTokenProvider.getClaim(token, "sub");
+                String userName = jwtTokenProvider.getClaim(token, "name");
 
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId, null, null);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
                 log.debug("[JWT Filter] 인증 정보 설정 완료: 사용자 ID = {}, 사용자 이름 = {}", userId, userName);
             }
-            filter.doFilter(request, response);
         }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private boolean isPublicPath(String requestURI) {
+        return requestURI.startsWith("/swagger-ui/") ||
+               requestURI.equals("/swagger-ui.html") ||
+               requestURI.startsWith("/v3/api-docs") ||
+               requestURI.startsWith("/swagger-resources/") ||
+               requestURI.startsWith("/webjars/") ||
+               requestURI.equals("/api/register") ||
+               requestURI.equals("/api/login") ||
+               requestURI.equals("/api/logout") ||
+               requestURI.equals("/api/db-ping");
     }
 }
