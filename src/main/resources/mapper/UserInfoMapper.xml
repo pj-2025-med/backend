@@ -1,0 +1,26 @@
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.med.mapper.UserInfoMapper">
+
+    <resultMap id="UserInfoMap" type="com.example.med.dto.UserInfo">
+        <id     column="user_id"    property="userId"/>
+        <result column="password"   property="password"/>
+        <result column="user_name"  property="userName"/>
+        <result column="email"      property="email"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <select id="findById" resultMap="UserInfoMap" parameterType="string">
+        SELECT user_id, password, user_name, email, created_at, updated_at
+        FROM USER_INFO
+        WHERE user_id = #{userId}
+    </select>
+
+    <insert id="insert" parameterType="com.example.med.dto.UserInfo">
+        INSERT INTO USER_INFO (user_id, password, user_name, email, created_at, updated_at)
+        VALUES (#{userId}, #{password}, #{userName}, #{email}, SYSTIMESTAMP, SYSTIMESTAMP)
+    </insert>
+
+</mapper>
