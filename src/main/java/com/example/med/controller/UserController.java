@@ -6,13 +6,11 @@ import com.example.med.jwt.JwtTokenProvider;
 import com.example.med.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -77,15 +75,15 @@ public class UserController {
             // JWT 쿠키 삭제
             JwtCookieUtil.DeleteJwtCookie();
 
-             return ResponseEntity.ok(Map.of(
-                "message", "로그아웃이 완료되었습니다.",
-                "success", true
+            return ResponseEntity.ok(Map.of(
+                    "message", "로그아웃이 완료되었습니다.",
+                    "success", true
             ));
         } catch (Exception e) {
             log.error("[로그아웃 오류] 예외: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "message", "로그아웃 처리 중 오류가 발생했습니다.",
-                "success", false
+                    "message", "로그아웃 처리 중 오류가 발생했습니다.",
+                    "success", false
             ));
         }
     }
@@ -93,13 +91,10 @@ public class UserController {
     @Operation(summary = "사용자 정보 업데이트", description = "로그인된 사용자 정보(이름, 비밀번호)를 업데이트합니다.")
     @PostMapping("/profile/update")
     public ResponseEntity<?> UpdateProfile(
-            @RequestBody @Parameter(description = "사용자 정보 업데이트 요청 DTO", required = true) UserUpdateRequestDto requestDto,
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+            @RequestBody @Parameter(description = "사용자 정보 업데이트 요청 DTO", required = true) UserUpdateRequestDto requestDto, HttpServletRequest request) {
         try {
             // JWT 토큰에서 사용자 ID 추출
-            String token = authorizationHeader.replace("Bearer ", "");
-            String userId = jwtTokenProvider.getClaim(token, "sub");
-
+            String userId = jwtCookieUtil.getUserIdFromJwtCookie(request);
             // 사용자 정보 업데이트
             UserInfo updatedUser = userService.updateUser(userId, requestDto);
 
@@ -113,10 +108,9 @@ public class UserController {
     }
 
     @Operation(
-        summary = "현재 로그인된 사용자 프로필 조회",
-        description = "JWT 쿠키를 통해 인증된 사용자의 프로필 정보를 조회합니다. 반환값은 userId, userName, email, createdAt, updatedAt을 포함합니다."
+            summary = "현재 로그인된 사용자 프로필 조회",
+            description = "JWT 쿠키를 통해 인증된 사용자의 프로필 정보를 조회합니다. 반환값은 userId, userName, email, createdAt, updatedAt을 포함합니다."
     )
-    @io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "access_token")
     @GetMapping("/profile")
     public ResponseEntity<?> getUserProfile(HttpServletRequest request){
         try{
@@ -124,20 +118,20 @@ public class UserController {
             String userId = jwtCookieUtil.getUserIdFromJwtCookie(request);
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "message", "JWT 쿠키가 없거나 유효하지 않습니다.",
-                    "success", false
+                        "message", "JWT 쿠키가 없거나 유효하지 않습니다.",
+                        "success", false
                 ));
             }
             // 2. DB에서 사용자 정보 조회
             UserInfoRespondDto user = userService.getUserById(userId);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
-                    "message", "사용자 정보를 찾을 수 없습니다.",
-                    "success", false
+                        "message", "사용자 정보를 찾을 수 없습니다.",
+                        "success", false
                 ));
             }
             // 3. 응답 DTO로 변환
-            com.example.med.dto.UserInfoRespondDto respondDto = new com.example.med.dto.UserInfoRespondDto();
+            UserInfoRespondDto respondDto = new UserInfoRespondDto();
             respondDto.setUserId(user.getUserId());
             respondDto.setUserName(user.getUserName());
             respondDto.setEmail(user.getEmail());
@@ -147,8 +141,8 @@ public class UserController {
         } catch(Exception e){
             log.error("[사용자 프로필 조회 오류] 예외: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "message", "사용자 프로필 조회 중 오류가 발생했습니다.",
-                "success", false
+                    "message", "사용자 프로필 조회 중 오류가 발생했습니다.",
+                    "success", false
             ));
         }
     }

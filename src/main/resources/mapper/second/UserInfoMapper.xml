@@ -30,7 +30,7 @@
     </insert>
 
     <select id="findByUserInfo" parameterType="string" resultType="com.example.med.dto.UserInfoRespondDto">
-        SELECT user_id, user_name, email, created_at, updated_at
+        SELECT user_id AS userId, user_name AS userName, email AS email, created_at AS createdAt, updated_at AS updatedAt
         FROM USER_INFO
         WHERE user_id = #{userId}
     </select>
