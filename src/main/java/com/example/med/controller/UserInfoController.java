@@ -3,11 +3,14 @@ package com.example.med.controller;
 import com.example.med.dto.UserLoginRequestDto;
 import com.example.med.dto.UserSignupRequestDto;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import javax.sql.DataSource;
 import java.util.Map;
 
 @RestController
@@ -16,9 +19,13 @@ public class UserInfoController {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public UserInfoController(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    // highlight-start
+    // secondDataSource를 명시적으로 주입받도록 수정
+    @Autowired
+    public UserInfoController(@Qualifier("secondDataSource") DataSource dataSource) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
+    // highlight-end
 
     @Operation(summary = "DB 연결 확인", description = "SELECT 1 FROM dual 실행")
     @GetMapping("/ping")
