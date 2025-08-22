@@ -7,14 +7,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.support.ResourceRegion;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.List;
 
 @RestController
@@ -57,96 +53,11 @@ public class DicomController {
         }
 
         dicomUtil.dicomDeal(resource, request, response);
-//        long fileLength = resource.contentLength();
-//        String range = request.getHeader("Range");
-//        /*
-//        * public ? DicomUtil (FileSystemResource fileSystemResource, HttpServletRequest request, HttpServletResponse response) {}
-//        *
-//        * */
-//        long start = 0;
-//        long end = fileLength - 1;
-//
-//        if (range != null && range.startsWith("bytes=")) {
-//            String[] parts = range.substring(6).split("-", 2);
-//            if (!parts[0].isEmpty()) start = Long.parseLong(parts[0]);
-//            if (parts.length > 1 && !parts[1].isEmpty()) end = Math.min(Long.parseLong(parts[1]), end);
-//            // 원하는 청크 제한(예: 1MiB)을 걸고 싶다면:
-//            long maxChunk = 1024L * 1024L;
-//            end = Math.min(end, start + maxChunk - 1);
-//
-//            response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT); // 206
-//            response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileLength);
-//        } else {
-//            response.setStatus(HttpServletResponse.SC_OK); // 200 전체
-//        }
-//
-//        long contentLength = end - start + 1;
-//        response.setHeader("Accept-Ranges", "bytes");
-//        response.setContentType("application/octet-stream");
-//        response.setHeader("Content-Length", String.valueOf(contentLength));
-//
-//        try (InputStream in = resource.getInputStream();
-//             OutputStream out = response.getOutputStream()) {
-//
-//            in.skip(start);
-//            byte[] buf = new byte[8192];
-//            long remaining = contentLength;
-//            int read;
-//            while (remaining > 0 && (read = in.read(buf, 0, (int)Math.min(buf.length, remaining))) != -1) {
-//                out.write(buf, 0, read);
-//                remaining -= read;
-//            }
-//        }
     }
 
     @GetMapping("/studies/{studyKey}")
     @ResponseBody
     public DicomStudyDto studyDicomRaw(@PathVariable long studyKey) throws IOException {
         return dicomService. getStudyDicom(studyKey);
-
-//        var resource = dicomService.getStudyDicom(studyKey);
-//        if (resource == null) {
-//            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-//            return;
-//        }
-//
-//        long fileLength = resource.contentLength();
-//        String range = request.getHeader("Range");
-//
-//        long start = 0;
-//        long end = fileLength - 1;
-//
-//        if (range != null && range.startsWith("bytes=")) {
-//            String[] parts = range.substring(6).split("-", 2);
-//            if (!parts[0].isEmpty()) start = Long.parseLong(parts[0]);
-//            if (parts.length > 1 && !parts[1].isEmpty()) end = Math.min(Long.parseLong(parts[1]), end);
-//            // 원하는 청크 제한(예: 1MiB)을 걸고 싶다면:
-//            long maxChunk = 1024L * 1024L;
-//            end = Math.min(end, start + maxChunk - 1);
-//
-//            response.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT); // 206
-//            response.setHeader("Content-Range", "bytes " + start + "-" + end + "/" + fileLength);
-//        } else {
-//            response.setStatus(HttpServletResponse.SC_OK); // 200 전체
-//        }
-//
-//        long contentLength = end - start + 1;
-//        response.setHeader("Accept-Ranges", "bytes");
-//        response.setContentType("application/octet-stream");
-//        response.setHeader("Content-Length", String.valueOf(contentLength));
-//
-//        try (InputStream in = resource.getInputStream();
-//             OutputStream out = response.getOutputStream()) {
-//
-//            in.skip(start);
-//            byte[] buf = new byte[8192];
-//            long remaining = contentLength;
-//            int read;
-//            while (remaining > 0 && (read = in.read(buf, 0, (int)Math.min(buf.length, remaining))) != -1) {
-//                out.write(buf, 0, read);
-//                remaining -= read;
-//            }
-//        }
-//    }
     }
 }
