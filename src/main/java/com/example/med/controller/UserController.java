@@ -75,15 +75,15 @@ public class UserController {
             // JWT 쿠키 삭제
             JwtCookieUtil.DeleteJwtCookie();
 
-             return ResponseEntity.ok(Map.of(
-                "message", "로그아웃이 완료되었습니다.",
-                "success", true
+            return ResponseEntity.ok(Map.of(
+                    "message", "로그아웃이 완료되었습니다.",
+                    "success", true
             ));
         } catch (Exception e) {
             log.error("[로그아웃 오류] 예외: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "message", "로그아웃 처리 중 오류가 발생했습니다.",
-                "success", false
+                    "message", "로그아웃 처리 중 오류가 발생했습니다.",
+                    "success", false
             ));
         }
     }
@@ -108,8 +108,8 @@ public class UserController {
     }
 
     @Operation(
-        summary = "현재 로그인된 사용자 프로필 조회",
-        description = "JWT 쿠키를 통해 인증된 사용자의 프로필 정보를 조회합니다. 반환값은 userId, userName, email, createdAt, updatedAt을 포함합니다."
+            summary = "현재 로그인된 사용자 프로필 조회",
+            description = "JWT 쿠키를 통해 인증된 사용자의 프로필 정보를 조회합니다. 반환값은 userId, userName, email, createdAt, updatedAt을 포함합니다."
     )
     @GetMapping("/profile")
     public ResponseEntity<?> getUserProfile(HttpServletRequest request){
@@ -118,16 +118,16 @@ public class UserController {
             String userId = jwtCookieUtil.getUserIdFromJwtCookie(request);
             if (userId == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
-                    "message", "JWT 쿠키가 없거나 유효하지 않습니다.",
-                    "success", false
+                        "message", "JWT 쿠키가 없거나 유효하지 않습니다.",
+                        "success", false
                 ));
             }
             // 2. DB에서 사용자 정보 조회
             UserInfoRespondDto user = userService.getUserById(userId);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
-                    "message", "사용자 정보를 찾을 수 없습니다.",
-                    "success", false
+                        "message", "사용자 정보를 찾을 수 없습니다.",
+                        "success", false
                 ));
             }
             // 3. 응답 DTO로 변환
@@ -141,8 +141,8 @@ public class UserController {
         } catch(Exception e){
             log.error("[사용자 프로필 조회 오류] 예외: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "message", "사용자 프로필 조회 중 오류가 발생했습니다.",
-                "success", false
+                    "message", "사용자 프로필 조회 중 오류가 발생했습니다.",
+                    "success", false
             ));
         }
     }

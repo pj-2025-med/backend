@@ -83,21 +83,21 @@ public class UserService {
 
         // 빈 값이면 기존 값 사용
         String newUserName = (requestDto.getUserName() == null || requestDto.getUserName().isEmpty())
-            ? existingUser.getUserName() : requestDto.getUserName();
+                ? existingUser.getUserName() : requestDto.getUserName();
 
         String newEmail = (requestDto.getEmail() == null || requestDto.getEmail().isEmpty())
-            ? existingUser.getEmail() : requestDto.getEmail();
+                ? existingUser.getEmail() : requestDto.getEmail();
 
         String newPassword = (requestDto.getPassword() == null || requestDto.getPassword().isEmpty())
-            ? existingUser.getPassword() : passwordEncoder.encode(requestDto.getPassword());
+                ? existingUser.getPassword() : passwordEncoder.encode(requestDto.getPassword());
 
         UserInfo user = UserInfo.builder()
-            .userId(userId)
-            .password(newPassword)
-            .userName(newUserName)
-            .email(newEmail)
-            .updatedAt(java.time.OffsetDateTime.now())
-            .build();
+                .userId(userId)
+                .password(newPassword)
+                .userName(newUserName)
+                .email(newEmail)
+                .updatedAt(java.time.OffsetDateTime.now())
+                .build();
 
         userInfoMapper.updateUserInfo(user);
         log.info("[사용자 정보 업데이트 성공] userId: {}", user.getUserId());
