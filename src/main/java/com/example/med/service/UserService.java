@@ -1,14 +1,15 @@
 package com.example.med.service;
 
-import com.example.med.dto.UserInfo;
-import com.example.med.dto.UserSignupRequestDto;
-import com.example.med.dto.UserLoginRequestDto;
+import com.example.med.dto.*;
 import com.example.med.mapper.second.UserInfoMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.OffsetDateTime;
 
 
 @Slf4j
@@ -33,8 +34,16 @@ public class UserService {
         }
 
         log.info("[사용자 로그인 성공] userId: {}", requestDto.getUserId());
+
+        // role  할당
+        if ("admin".equals(user.getUserId())) {
+            user.setRole("ADMIN");
+        } else {
+            user.setRole("USER");
+        }
         return user;
     }
+
     @Transactional
     public UserInfo registerUser(UserSignupRequestDto requestDto) {
         // 아이디 중복 검사
@@ -66,4 +75,40 @@ public class UserService {
         log.info("[사용자 회원가입 성공] userId: {}", user.getUserId());
         return user;
     }
+
+    @Transactional
+    public UserInfo updateUser(String userId, UserUpdateRequestDto requestDto){
+
+        UserInfo existingUser = userInfoMapper.findById(userId);
+        if (existingUser == null) {
+            throw new IllegalArgumentException("존재하지 않는 사용자입니다.");
+        }
+
+        // 빈 값이면 기존 값 사용
+        String newUserName = (requestDto.getUserName() == null || requestDto.getUserName().isEmpty())
+            ? existingUser.getUserName() : requestDto.getUserName();
+
+        String newEmail = (requestDto.getEmail() == null || requestDto.getEmail().isEmpty())
+            ? existingUser.getEmail() : requestDto.getEmail();
+
+        String newPassword = (requestDto.getPassword() == null || requestDto.getPassword().isEmpty())
+            ? existingUser.getPassword() : passwordEncoder.encode(requestDto.getPassword());
+
+        UserInfo user = UserInfo.builder()
+            .userId(userId)
+            .password(newPassword)
+            .userName(newUserName)
+            .email(newEmail)
+            .updatedAt(java.time.OffsetDateTime.now())
+            .build();
+
+        userInfoMapper.updateUserInfo(user);
+        log.info("[사용자 정보 업데이트 성공] userId: {}", user.getUserId());
+        return user;
+    }
+
+    public UserInfoRespondDto getUserById(String userId){
+        return userInfoMapper.findByUserInfo(userId);
+    }
+
 }

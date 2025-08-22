@@ -1,15 +1,15 @@
 package com.example.med.controller;
 
-import com.example.med.dto.UserLoginRequestDto;
-import com.example.med.dto.UserSignupRequestDto;
-import com.example.med.dto.UserInfo;
+import com.example.med.dto.*;
 import com.example.med.jwt.JwtCookieUtil;
 import com.example.med.jwt.JwtTokenProvider;
 import com.example.med.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
@@ -27,6 +27,7 @@ import java.util.Map;
 @Slf4j
 public class UserController {
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtCookieUtil jwtCookieUtil;
     private final UserService userService;
 
     @Operation(summary = "회원가입", description = "사용자 정보를 받아 회원가입을 처리합니다.\n\n예시 요청 JSON:\n{\n  \"userId\": \"testuser\",\n  \"password\": \"testpass\",\n  \"userName\": \"홍길동\",\n  \"email\": \"test@example.com\"\n}")
@@ -58,7 +59,7 @@ public class UserController {
             }
 
             // JWT 토큰 생성
-            String token = jwtTokenProvider.CreateToken(user.getUserId(), user.getUserName());
+            String token = jwtTokenProvider.CreateToken(user.getUserId(), user.getUserName(), user.getRole());
 
             // 쿠키에 토큰 설정
             JwtCookieUtil.addJwtToCookie(response, token);
@@ -69,9 +70,9 @@ public class UserController {
             return ResponseEntity.status(500).body("로그인 처리 중 오류 발생: " + e.getMessage());
         }
     }
-    @Operation(summary = "로그아웃", description = "JWT 쿠키를 삭제하여 로그아웃을 처리합니다.\n\n예시: 로그인 후 받은 쿠키를 삭제합니다.")
+    @Operation(summary = "로그아웃", description = "JWT 쿠키를 삭제하여 로그아웃을 처리합니다.")
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletResponse response){
+    public ResponseEntity<?> logout(){
         try {
             // JWT 쿠키 삭제
             JwtCookieUtil.DeleteJwtCookie();
@@ -88,4 +89,69 @@ public class UserController {
             ));
         }
     }
+
+    @Operation(summary = "사용자 정보 업데이트", description = "로그인된 사용자 정보(이름, 비밀번호)를 업데이트합니다.")
+    @PostMapping("/profile/update")
+    public ResponseEntity<?> UpdateProfile(
+            @RequestBody @Parameter(description = "사용자 정보 업데이트 요청 DTO", required = true) UserUpdateRequestDto requestDto,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        try {
+            // JWT 토큰에서 사용자 ID 추출
+            String token = authorizationHeader.replace("Bearer ", "");
+            String userId = jwtTokenProvider.getClaim(token, "sub");
+
+            // 사용자 정보 업데이트
+            UserInfo updatedUser = userService.updateUser(userId, requestDto);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "사용자 정보가 업데이트되었습니다.",
+                    "user", updatedUser
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "사용자 정보 업데이트 중 오류 발생: " + e.getMessage()));
+        }
+    }
+
+    @Operation(
+        summary = "현재 로그인된 사용자 프로필 조회",
+        description = "JWT 쿠키를 통해 인증된 사용자의 프로필 정보를 조회합니다. 반환값은 userId, userName, email, createdAt, updatedAt을 포함합니다."
+    )
+    @io.swagger.v3.oas.annotations.security.SecurityRequirement(name = "access_token")
+    @GetMapping("/profile")
+    public ResponseEntity<?> getUserProfile(HttpServletRequest request){
+        try{
+            // 1. JWT 쿠키에서 UserId 추출
+            String userId = jwtCookieUtil.getUserIdFromJwtCookie(request);
+            if (userId == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                    "message", "JWT 쿠키가 없거나 유효하지 않습니다.",
+                    "success", false
+                ));
+            }
+            // 2. DB에서 사용자 정보 조회
+            UserInfoRespondDto user = userService.getUserById(userId);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                    "message", "사용자 정보를 찾을 수 없습니다.",
+                    "success", false
+                ));
+            }
+            // 3. 응답 DTO로 변환
+            com.example.med.dto.UserInfoRespondDto respondDto = new com.example.med.dto.UserInfoRespondDto();
+            respondDto.setUserId(user.getUserId());
+            respondDto.setUserName(user.getUserName());
+            respondDto.setEmail(user.getEmail());
+            respondDto.setCreatedAt(user.getCreatedAt());
+            respondDto.setUpdatedAt(user.getUpdatedAt());
+            return ResponseEntity.ok(respondDto);
+        } catch(Exception e){
+            log.error("[사용자 프로필 조회 오류] 예외: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "message", "사용자 프로필 조회 중 오류가 발생했습니다.",
+                "success", false
+            ));
+        }
+    }
+
+
 }
