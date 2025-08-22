@@ -1,8 +1,11 @@
 package com.example.med.service;
 
 import com.example.med.config.PacsStorageProps;
+import com.example.med.dto.DicomSeriesDto;
+import com.example.med.dto.DicomStudyDto;
 import com.example.med.dto.FilePathDto;
 import com.example.med.mapper.DicomMapper;
+import com.example.med.util.DicomUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpRange;
@@ -20,7 +23,7 @@ public class DicomService {
 
     private final DicomMapper dicomMapper;
     private final PacsStorageProps props;
-
+    private final DicomUtil dicomUtil;
     public List<Long> listSeriesKeys(long studyKey) {
         return dicomMapper.findSeriesKeys(studyKey);
     }
@@ -36,7 +39,7 @@ public class DicomService {
         // PATH 끝/시작 슬래시를 고려하여 안전하게 합치기
         String base = props.getBasePath();          // \\WW210.94.241.9\STS\
         String sub  = (fp.getPath() == null) ? "" : fp.getPath();
-        String full = joinWindowsPath(base, sub, fp.getFname());
+        String full = dicomUtil.joinWindowsPath(base, sub, fp.getFname());
 
         File file = new File(full);
         if (!file.exists() || !file.isFile()) return null;
@@ -63,21 +66,33 @@ public class DicomService {
     }
 
     /** 윈도우 경로 조합: 백슬래시 정규화 */
-    private String joinWindowsPath(String... parts) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < parts.length; i++) {
-            if (!StringUtils.hasText(parts[i])) continue;
-            String p = parts[i].replace('/', '\\');
-            if (sb.length() == 0) {
-                sb.append(p);
-            } else {
-                boolean endBS = sb.charAt(sb.length() - 1) == '\\';
-                boolean startBS = p.charAt(0) == '\\';
-                if (endBS && startBS) sb.setLength(sb.length() - 1);
-                else if (!endBS && !startBS) sb.append('\\');
-                sb.append(p);
-            }
-        }
-        return sb.toString();
+
+
+    public DicomStudyDto getStudyDicom(long studyKey) {
+        List<Long> seriesKeys = dicomMapper.findSeriesKeys(studyKey);
+        List<DicomSeriesDto> seriesList = seriesKeys.stream().map(seriesKey -> {
+            // 2-1) 이미지 키들 (SQL에서 정렬: InstanceNumber 숫자 정렬, 없으면 imageKey)
+            List<Long> imageKeys = dicomMapper.findImageKeys(studyKey, seriesKey);
+
+            // 2-2) DTO 생성
+            DicomSeriesDto seriesDto = new DicomSeriesDto();
+            seriesDto.setSeriesKey(seriesKey);
+            // Cornerstone volume 식별자 (나중에 "cornerstoneStreamingImageVolume:<여기>"로 씀)
+            seriesDto.setVolumeId("study:" + studyKey + "|series:" + seriesKey);
+
+            // 2-3) 각 이미지 키를 Cornerstone이 읽을 수 있는 wadouri: URL로 변환
+            List<String> imageIds = imageKeys.stream()
+                    .map(imgKey -> "wadouri:http://localhost:8080/api/v1/dicom/studies/"
+                            + studyKey + "/series/" + seriesKey + "/images/" + imgKey)
+                    .toList();
+
+            seriesDto.setImageIds(imageIds);
+            return seriesDto;
+        }).toList();
+
+        DicomStudyDto dto = new DicomStudyDto();
+        dto.setStudyKey(studyKey);
+        dto.setSeries(seriesList);
+        return dto;
     }
 }
