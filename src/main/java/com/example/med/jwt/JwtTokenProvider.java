@@ -42,13 +42,15 @@ public class JwtTokenProvider {
      * JWT 토큰 생성
      * @param userId 사용자 ID
      * @param name 사용자 이름
+     * @param role 사용자 역할
      */
-    public String CreateToken(String userId, String name){
+    public String CreateToken(String userId, String name, String role){
         Date now = new Date();
         Date expiry = new Date(now.getTime() + refreshTokenExpirationMillis);
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", userId);
         claims.put("name", name);
+        claims.put("role", role);
         return Jwts.builder()
                 .setClaims(claims)
                 .setIssuedAt(now)
@@ -72,7 +74,7 @@ public class JwtTokenProvider {
     }
 
     /**
-     * JWT 토큰에서 원하는 클레임 추출 (userId, name)
+     * JWT 토큰에서 원하는 클레임 추출 (userId, name, role)
      */
     public String getClaim(String token, String claimName) {
         Claims claims = ExtractAllClaims(token);
