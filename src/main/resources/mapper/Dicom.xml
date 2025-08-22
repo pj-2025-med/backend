@@ -1,0 +1,39 @@
+<!-- src/main/resources/mapper/Dicom.xml -->
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.med.mapper.DicomMapper">
+
+    <!-- studyKey 내 seriesKey 목록 -->
+    <select id="findSeriesKeys" resultType="long">
+        SELECT s.SERIESKEY
+        FROM "C##SAHMYOOK"."SERIESTAB" s
+        WHERE s.STUDYKEY = #{studyKey}
+        ORDER BY NVL(s.SERIESNUM, s.SERIESKEY)
+    </select>
+
+    <!-- 이미지 키 목록: INSTANCENUM(문자) → 숫자 정렬, 숫자화 실패시 IMAGEKEY 보조 -->
+    <select id="findImageKeys" resultType="long">
+        SELECT i.IMAGEKEY
+        FROM "C##SAHMYOOK"."IMAGETAB" i
+        WHERE i.STUDYKEY = #{studyKey}
+        AND i.SERIESKEY = #{seriesKey}
+        ORDER BY
+        CASE
+        WHEN REGEXP_LIKE(i.INSTANCENUM, '^[0-9]+$') THEN TO_NUMBER(i.INSTANCENUM)
+        ELSE NULL
+        END NULLS LAST,
+        i.IMAGEKEY
+    </select>
+
+    <!-- 파일 경로 조회 -->
+    <select id="findImagePath" resultType="com.example.med.dto.FilePathDto">
+        SELECT i.PATH   as "path",
+        i.FNAME  as "fname"
+        FROM "C##SAHMYOOK"."IMAGETAB" i
+        WHERE i.STUDYKEY  = #{studyKey}
+        AND i.SERIESKEY = #{seriesKey}
+        AND i.IMAGEKEY  = #{imageKey}
+    </select>
+
+</mapper>
