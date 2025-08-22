@@ -23,18 +23,7 @@
         VALUES (#{userId}, #{password}, #{userName}, #{email}, SYSTIMESTAMP, SYSTIMESTAMP)
     </insert>
 
-    <insert id="updateUserInfo" parameterType="com.example.med.dto.UserInfo">
-        UPDATE USER_INFO
-        SET password = #{password}, user_name = #{userName}, email = #{email}, updated_at = SYSTIMESTAMP
-        WHERE user_id = #{userId}
-    </insert>
-
-    <select id="findByUserInfo" parameterType="string" resultType="com.example.med.dto.UserInfoRespondDto">
-        SELECT user_id AS userId, user_name AS userName, email AS email, created_at AS createdAt, updated_at AS updatedAt
-        FROM USER_INFO
-        WHERE user_id = #{userId}
-    </select>
-
+    <!-- selectByUserId 메서드 추가 (로그인에 필요) -->
     <select id="selectByUserId" resultMap="UserInfoMap">
         SELECT user_id, password, user_name, email, created_at, updated_at
         FROM USER_INFO

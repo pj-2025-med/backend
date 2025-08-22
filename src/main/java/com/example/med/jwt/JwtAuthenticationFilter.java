@@ -12,9 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.time.*;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -63,21 +61,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 String userId = jwtTokenProvider.getClaim(token, "sub");
                 String userName = jwtTokenProvider.getClaim(token, "name");
-                String userRole = jwtTokenProvider.getClaim(token, "role");
 
-                java.util.List<org.springframework.security.core.authority.SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
-                if (userRole != null && !userRole.isEmpty()) {
-                    authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + userRole));
-                }
-
-                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId, null, authorities);
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId, null, null);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                 LocalDateTime now = LocalDateTime.now();
-                 String formatedNow = now.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 HH시 mm분 ss초"));
-
-                log.debug("[JWT Filter] 인증 정보 설정 완료: 사용자 ID = {}, 사용자 이름 = {}, 역할 = {}", userId, userName, userRole);
-                String userLog = String.format("[LOG] 접속 시간 = %s, 사용자 ID = %s, 사용자 이름 = %s, 역할 = %s", formatedNow, userId, userName, userRole);
+                log.debug("[JWT Filter] 인증 정보 설정 완료: 사용자 ID = {}, 사용자 이름 = {}", userId, userName);
             }
         }
 
