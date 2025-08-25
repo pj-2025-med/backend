@@ -40,7 +40,10 @@
         SELECT DISTINCT
             st.PNAME as "patientName",
             st.STUDYDESC as "studyDescription",
-            st.STUDYDATE as "studyDate"
+            st.STUDYDATE as "studyDate",
+            st.PID as "pid",
+            st.STUDYKEY as "studyKey",
+            st.PATIENTKEY as "patientKey"
         FROM "C##SAHMYOOK".STUDYTAB st
         INNER JOIN "C##SAHMYOOK".SERIESTAB se ON st.STUDYKEY = se.STUDYKEY
         WHERE se.MODALITY = #{modality}
