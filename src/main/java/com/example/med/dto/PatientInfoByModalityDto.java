@@ -11,4 +11,7 @@ public class PatientInfoByModalityDto {
     private String patientName;
     private String studyDescription;
     private String studyDate;
+    private String pid;
+    private long studyKey;
+    private long patientKey;
 }
