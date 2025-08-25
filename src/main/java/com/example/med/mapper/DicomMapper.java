@@ -3,6 +3,7 @@ package com.example.med.mapper;
 import com.example.med.dto.FilePathDto;
 import com.example.med.dto.PatientInfo;
 import com.example.med.dto.StudyListDto;
+import com.example.med.dto.PatientInfoByModalityDto;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -27,5 +28,6 @@ public interface DicomMapper {
 
     List<PatientInfo> findPatientInfoByName(@Param("patientname") String patientname);
     List<StudyListDto> findStudyListByPid(@Param("pid") String pid);
+    List<PatientInfoByModalityDto> findPatientInfoByModality(@Param("modality") String modality);
 
 }

@@ -63,5 +63,14 @@
     </select>
 
 
+    <select id="findPatientInfoByModality" resultType="com.example.med.dto.PatientInfoByModalityDto">
+        SELECT DISTINCT
+            st.PNAME as "patientName",
+            st.STUDYDESC as "studyDescription",
+            st.STUDYDATE as "studyDate"
+        FROM "C##SAHMYOOK".STUDYTAB st
+        INNER JOIN "C##SAHMYOOK".SERIESTAB se ON st.STUDYKEY = se.STUDYKEY
+        WHERE se.MODALITY = #{modality}
+    </select>
 
 </mapper>
