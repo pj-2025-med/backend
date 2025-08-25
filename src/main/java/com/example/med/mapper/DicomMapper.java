@@ -1,6 +1,7 @@
 package com.example.med.mapper;
 
 import com.example.med.dto.FilePathDto;
+import com.example.med.dto.PatientInfoByModalityDto;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -22,5 +23,7 @@ public interface DicomMapper {
             @Param("seriesKey") long seriesKey,
             @Param("imageKey") long imageKey
     );
+
+    List<PatientInfoByModalityDto> findPatientInfoByModality(@Param("modality") String modality);
 
 }

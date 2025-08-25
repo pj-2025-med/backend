@@ -4,6 +4,7 @@ import com.example.med.config.PacsStorageProps;
 import com.example.med.dto.DicomSeriesDto;
 import com.example.med.dto.DicomStudyDto;
 import com.example.med.dto.FilePathDto;
+import com.example.med.dto.PatientInfoByModalityDto;
 import com.example.med.mapper.DicomMapper;
 import com.example.med.util.DicomUtil;
 import lombok.RequiredArgsConstructor;
@@ -94,5 +95,9 @@ public class DicomService {
         dto.setStudyKey(studyKey);
         dto.setSeries(seriesList);
         return dto;
+    }
+
+    public List<PatientInfoByModalityDto> getPatientInfoByModality(String modality) {
+        return dicomMapper.findPatientInfoByModality(modality);
     }
 }
