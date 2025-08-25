@@ -43,7 +43,7 @@
         PSEX   AS PSEX,
         PBIRTHDATE AS PBIRTHDATE
         FROM PATIENTTAB
-        WHERE PNAME = #{patientname}
+        WHERE PNAME LIKE #{patientname} || '%'
     </select>
 
     <!-- 환자의 Study 리스트 조회 -->
@@ -63,17 +63,39 @@
     </select>
 
 
-    <select id="findPatientInfoByModality" resultType="com.example.med.dto.PatientInfoByModalityDto">
-        SELECT DISTINCT
-            st.PNAME as "patientName",
-            st.STUDYDESC as "studyDescription",
-            st.STUDYDATE as "studyDate",
-            st.PID as "pid",
-            st.STUDYKEY as "studyKey",
-            st.PATIENTKEY as "patientKey"
-        FROM "C##SAHMYOOK".STUDYTAB st
-        INNER JOIN "C##SAHMYOOK".SERIESTAB se ON st.STUDYKEY = se.STUDYKEY
-        WHERE se.MODALITY = #{modality}
+<!--    <select id="findPatientInfoByModality" resultType="com.example.med.dto.PatientInfoByModalityDto">-->
+<!--        SELECT DISTINCT-->
+<!--            st.PNAME as "patientName",-->
+<!--            st.STUDYDESC as "studyDescription",-->
+<!--            st.STUDYDATE as "studyDate",-->
+<!--            st.PID as "pid",-->
+<!--            st.STUDYKEY as "studyKey",-->
+<!--            st.PATIENTKEY as "patientKey"-->
+<!--        FROM "C##SAHMYOOK".STUDYTAB st-->
+<!--        INNER JOIN "C##SAHMYOOK".SERIESTAB se ON st.STUDYKEY = se.STUDYKEY-->
+<!--        WHERE se.MODALITY = #{modality}-->
+<!--    </select>-->
+
+    <select id="findPatientsWithStudiesByModality"
+            parameterType="string"
+            resultType="com.example.med.dto.PatientStudyFlatDto">
+        SELECT
+        p.PID          AS pid,
+        p.PNAME        AS pname,
+        p.PSEX         AS psex,
+        p.PBIRTHDATE   AS pbirthdate,
+        s.STUDYKEY     AS studyKey,
+        s.STUDYDATE    AS studyDate,
+        s.STUDYTIME    AS studyTime,
+        s.STUDYDESC    AS studyDesc,
+        s.MODALITY     AS modality,
+        s.BODYPART     AS bodyPart,
+        s.PATAGE       AS patAge
+        FROM "C##SAHMYOOK".PATIENTTAB p
+        JOIN "C##SAHMYOOK".STUDYTAB s
+        ON s.PID = p.PID
+        WHERE s.MODALITY = #{modality}
+        ORDER BY p.PID, s.STUDYDATE DESC, s.STUDYTIME DESC
     </select>
 
 </mapper>

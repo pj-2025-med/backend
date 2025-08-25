@@ -1,6 +1,7 @@
 package com.example.med.service;
 
 import com.example.med.dto.PatientInfo;
+import com.example.med.dto.PatientStudyFlatDto;
 import com.example.med.dto.StudyListDto;
 import com.example.med.mapper.DicomMapper;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -30,4 +32,16 @@ public class SearchService {
         }
         return patients;
     }
+
+    @Transactional(readOnly = true)
+    public List<PatientStudyFlatDto> searchByModality(String modality) {
+        if (modality == null || modality.isBlank()) return List.of();
+        String m = modality.trim();
+        return Optional.ofNullable(dicomMapper.findPatientsWithStudiesByModality(m))
+                .orElse(List.of());
+    }
+
+//    public List<PatientInfoByModalityDto> getPatientInfoByModality(String modality) {
+//        return dicomMapper.findPatientInfoByModality(modality);
+//    }
 }
