@@ -1,0 +1,53 @@
+<!-- src/main/resources/mapper/Second/StudyCommentMapper.xml -->
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.med.mapper.StudyCommentMapper">
+
+    <select id="findCommentsByStudyKey" resultType="com.example.med.dto.StudyCommentDto">
+        SELECT
+            comment_id      as commentId,
+            study_key       as studyKey,
+            user_id         as userId,
+            comment_title   as commentTitle,
+            comment_content as commentContent,
+            created_at      as createdAt,
+            updated_at      as updatedAt
+        FROM STUDY_COMMENT
+        WHERE study_key = #{studyKey}
+        ORDER BY created_at DESC
+    </select>
+
+    <insert id="insertComment" parameterType="com.example.med.dto.StudyCommentDto">
+        INSERT INTO STUDY_COMMENT (study_key, user_id, comment_title, comment_content)
+        VALUES (#{studyKey}, #{userId}, #{commentTitle}, #{commentContent})
+    </insert>
+
+    <select id="findCommentById" resultType="com.example.med.dto.StudyCommentDto">
+        SELECT
+            comment_id      as commentId,
+            study_key       as studyKey,
+            user_id         as userId,
+            comment_title   as commentTitle,
+            comment_content as commentContent,
+            created_at      as createdAt,
+            updated_at      as updatedAt
+        FROM STUDY_COMMENT
+        WHERE comment_id = #{commentId}
+    </select>
+
+    <update id="updateComment" parameterType="com.example.med.dto.StudyCommentDto">
+        UPDATE STUDY_COMMENT
+        SET
+            comment_title   = #{commentTitle},
+            comment_content = #{commentContent},
+            updated_at      = SYSTIMESTAMP
+        WHERE comment_id = #{commentId}
+    </update>
+
+    <delete id="deleteComment">
+        DELETE FROM STUDY_COMMENT
+        WHERE comment_id = #{commentId}
+    </delete>
+
+</mapper>
