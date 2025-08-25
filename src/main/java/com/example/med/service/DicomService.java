@@ -7,6 +7,7 @@ import com.example.med.dto.FilePathDto;
 import com.example.med.mapper.DicomMapper;
 import com.example.med.util.DicomUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpRange;
 import org.springframework.http.MediaType;
@@ -24,6 +25,10 @@ public class DicomService {
     private final DicomMapper dicomMapper;
     private final PacsStorageProps props;
     private final DicomUtil dicomUtil;
+
+    @Value("${dicom.base-uri}")
+    private String baseUrl;
+
     public List<Long> listSeriesKeys(long studyKey) {
         return dicomMapper.findSeriesKeys(studyKey);
     }
@@ -82,7 +87,7 @@ public class DicomService {
 
             // 2-3) 각 이미지 키를 Cornerstone이 읽을 수 있는 wadouri: URL로 변환
             List<String> imageIds = imageKeys.stream()
-                    .map(imgKey -> "wadouri:http://localhost:8080/api/v1/dicom/studies/"
+                    .map(imgKey -> "wadouri:" + baseUrl + "/api/v1/dicom/studies/"
                             + studyKey + "/series/" + seriesKey + "/images/" + imgKey)
                     .toList();
 
