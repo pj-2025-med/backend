@@ -1,5 +1,6 @@
 package com.example.med.config;
 
+import com.example.med.mapper.StudyCommentMapper;
 import com.example.med.mapper.second.UserInfoMapper;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionFactoryBean;
@@ -38,7 +39,6 @@ public class SecondConfig {
         return new DataSourceTransactionManager(dataSource);
     }
 
-    // highlight-start
     // UserInfoMapper를 위한 MapperFactoryBean을 수동으로 등록합니다.
     @Bean
     public MapperFactoryBean<UserInfoMapper> userInfoMapper(@Qualifier("secondSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
@@ -46,5 +46,12 @@ public class SecondConfig {
         factoryBean.setSqlSessionFactory(sqlSessionFactory);
         return factoryBean;
     }
-    // highlight-end
+
+    // StudyCommentMapper를 위한 MapperFactoryBean을 수동으로 등록합니다.
+    @Bean
+    public MapperFactoryBean<StudyCommentMapper> studyCommentMapper(@Qualifier("secondSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<StudyCommentMapper> factoryBean = new MapperFactoryBean<>(StudyCommentMapper.class);
+        factoryBean.setSqlSessionFactory(sqlSessionFactory);
+        return factoryBean;
+    }
 }

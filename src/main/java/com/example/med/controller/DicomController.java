@@ -1,7 +1,6 @@
 package com.example.med.controller;
 
 import com.example.med.dto.DicomStudyDto;
-import com.example.med.dto.PatientInfoByModalityDto;
 import com.example.med.service.DicomService;
 import com.example.med.util.DicomUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -62,8 +61,4 @@ public class DicomController {
         return dicomService. getStudyDicom(studyKey);
     }
 
-    @GetMapping("/modality/{modality}")
-    public ResponseEntity<List<PatientInfoByModalityDto>> getPatientInfoByModality(@PathVariable String modality) {
-        return ResponseEntity.ok(dicomService.getPatientInfoByModality(modality));
-    }
 }
