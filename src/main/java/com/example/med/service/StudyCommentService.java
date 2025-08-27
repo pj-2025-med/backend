@@ -6,6 +6,7 @@ import com.example.med.dto.StudyCommentDto;
 import com.example.med.mapper.DicomMapper;
 import com.example.med.mapper.StudyCommentMapper;
 import lombok.RequiredArgsConstructor;
+import org.jasypt.encryption.StringEncryptor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +20,45 @@ public class StudyCommentService {
 
     private final DicomMapper dicomMapper; // 메인 DB 매퍼
     private final StudyCommentMapper studyCommentMapper; // 서브 DB 매퍼
+    private final StringEncryptor stringEncryptor; // Jasypt 암호/복호화
 
     @Transactional(readOnly = true)
     public List<StudyCommentDto> getCommentsByStudyKey(long studyKey) {
-        return studyCommentMapper.findCommentsByStudyKey(studyKey);
+        List<StudyCommentDto> comments = studyCommentMapper.findCommentsByStudyKey(studyKey);
+        for (StudyCommentDto comment : comments) {
+            // userId 복호화
+            String encryptedUserId = comment.getUserId();
+            if (encryptedUserId != null && !encryptedUserId.isEmpty()) {
+                try {
+                    String decryptedUserId = stringEncryptor.decrypt(encryptedUserId);
+                    comment.setUserId(decryptedUserId);
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+            // commentTitle 복호화
+            String encryptedTitle = comment.getCommentTitle();
+            if (encryptedTitle != null && !encryptedTitle.isEmpty()) {
+                try {
+                    String decryptedTitle = stringEncryptor.decrypt(encryptedTitle);
+                    comment.setCommentTitle(decryptedTitle);
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+            // commentContent 복호화
+            String encryptedContent = comment.getCommentContent();
+            if (encryptedContent != null && !encryptedContent.isEmpty()) {
+                try {
+                    String decryptedContent = stringEncryptor.decrypt(encryptedContent);
+                    comment.setCommentContent(decryptedContent);
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+        }
+        // CommentId, createdAt, updatedAt 필드는 복호화하지 않음 -> String 타입만 암호화 가능하기에 변환을 해야하고, 굳이 이건
+        return comments;
     }
 
     @Transactional
@@ -31,6 +67,34 @@ public class StudyCommentService {
         List<Long> seriesKeys = dicomMapper.findSeriesKeys(comment.getStudyKey());
         if (seriesKeys == null || seriesKeys.isEmpty()) {
             throw new IllegalArgumentException("유효하지 않은 studyKey입니다: " + comment.getStudyKey());
+        }
+
+        // userId, commentTitle, commentContent 암호화 후 DB 저장
+        if (comment.getUserId() != null && !comment.getUserId().isEmpty()) {
+            try {
+                String encryptedUserId = stringEncryptor.encrypt(comment.getUserId());
+                comment.setUserId(encryptedUserId);
+            } catch (Exception e) {
+                // 암호화 실패 시 원본 유지
+            }
+        }
+
+        if (comment.getCommentTitle() != null && !comment.getCommentTitle().isEmpty()) {
+            try {
+                String encryptedTitle = stringEncryptor.encrypt(comment.getCommentTitle());
+                comment.setCommentTitle(encryptedTitle);
+            } catch (Exception e) {
+                // 암호화 실패 시 원본 유지
+            }
+        }
+
+        if (comment.getCommentContent() != null && !comment.getCommentContent().isEmpty()) {
+            try {
+                String encryptedContent = stringEncryptor.encrypt(comment.getCommentContent());
+                comment.setCommentContent(encryptedContent);
+            } catch (Exception e) {
+                // 암호화 실패 시 원본 유지
+            }
         }
 
         // 2. 댓글 생성 시간 설정
@@ -54,6 +118,47 @@ public class StudyCommentService {
             throw new IllegalStateException("코멘트를 찾을 수 없습니다: " + commentId);
         }
 
+        // 기존 댓글의 userId를 복호화해서 권한 체크
+        String decryptedUserId = existingComment.getUserId();
+        if (decryptedUserId != null && !decryptedUserId.isEmpty()) {
+            try {
+                decryptedUserId = stringEncryptor.decrypt(decryptedUserId);
+            } catch (Exception e) {
+                // 복호화 실패 시 원본 사용
+            }
+        }
+
+        if (!Objects.equals(decryptedUserId, currentUserId)) {
+            throw new IllegalStateException("코멘트를 수정할 권한이 없습니다.");
+        }
+
+        // 수정할 데이터 암호화
+        if (studyCommentDto.getUserId() != null && !studyCommentDto.getUserId().isEmpty()) {
+            try {
+                String encryptedUserId = stringEncryptor.encrypt(studyCommentDto.getUserId());
+                studyCommentDto.setUserId(encryptedUserId);
+            } catch (Exception e) {
+                // 암호화 실패 시 원본 유지
+            }
+        }
+
+        if (studyCommentDto.getCommentTitle() != null && !studyCommentDto.getCommentTitle().isEmpty()) {
+            try {
+                String encryptedTitle = stringEncryptor.encrypt(studyCommentDto.getCommentTitle());
+                studyCommentDto.setCommentTitle(encryptedTitle);
+            } catch (Exception e) {
+                // 암호화 실패 시 원본 유지
+            }
+        }
+
+        if (studyCommentDto.getCommentContent() != null && !studyCommentDto.getCommentContent().isEmpty()) {
+            try {
+                String encryptedContent = stringEncryptor.encrypt(studyCommentDto.getCommentContent());
+                studyCommentDto.setCommentContent(encryptedContent);
+            } catch (Exception e) {
+                // 암호화 실패 시 원본 유지
+            }
+        }
         // 2. 수정 권한 확인
         if (!Objects.equals(existingComment.getUserId(), currentUserId)) {
             throw new IllegalStateException("코멘트를 수정할 권한이 없습니다.");
@@ -87,8 +192,17 @@ public class StudyCommentService {
             throw new IllegalStateException("코멘트를 찾을 수 없습니다: " + commentId);
         }
 
-        // 2. 코멘트 작성자와 현재 로그인한 사용자가 동일한지 확인 (권한 체크)
-        if (!Objects.equals(existingComment.getUserId(), currentUserId)) {
+        // 2. 기존 댓글의 userId를 복호화해서 권한 체크
+        String decryptedUserId = existingComment.getUserId();
+        if (decryptedUserId != null && !decryptedUserId.isEmpty()) {
+            try {
+                decryptedUserId = stringEncryptor.decrypt(decryptedUserId);
+            } catch (Exception e) {
+                // 복호화 실패 시 원본 사용
+            }
+        }
+
+        if (!Objects.equals(decryptedUserId, currentUserId)) {
             throw new IllegalStateException("코멘트를 삭제할 권한이 없습니다.");
         }
 
