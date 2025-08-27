@@ -18,9 +18,15 @@
         ORDER BY created_at DESC
     </select>
 
-    <insert id="insertComment" parameterType="com.example.med.dto.StudyCommentDto">
-        INSERT INTO STUDY_COMMENT (study_key, user_id, comment_title, comment_content)
-        VALUES (#{studyKey}, #{userId}, #{commentTitle}, #{commentContent})
+
+    <insert id="insertComment" parameterType="com.example.med.dto.StudyCommentDto" statementType="CALLABLE">
+        <!-- Oracle의 RETURNING 절을 사용하여 INSERT 후 생성된 ID를 DTO에 다시 설정합니다. -->
+        <!-- 이 방식은 DB 트리거 등에 의해 ID가 자동 생성될 때 유용합니다. -->
+        BEGIN
+            INSERT INTO study_comment (study_key, user_id, comment_title, comment_content, created_at)
+            VALUES (#{studyKey}, #{userId}, #{commentTitle}, #{commentContent}, #{createdAt, jdbcType=TIMESTAMP})
+            RETURNING comment_id INTO #{commentId, mode=OUT, jdbcType=BIGINT};
+        END;
     </insert>
 
     <select id="findCommentById" resultType="com.example.med.dto.StudyCommentDto">
@@ -66,7 +72,7 @@
         <result property="updatedAt"      column="UPDATED_AT"/>
     </resultMap>
 
-    <insert id="insertLog"
+    <insert id="updateLog"
             parameterType="com.example.med.dto.logDto.CommentUpdateLogDto">
         INSERT INTO STUDY_COMMENT_LOG (
         STUDY_KEY, USER_ID, COMMENT_ID, COMMENT_TYPE,
@@ -108,4 +114,23 @@
         )
     </insert>
 
+    <!-- 생성 로그: DTO에 createdAt이 세팅돼 있으면 그걸 포맷, 없으면 현재시각 포맷 -->
+    <insert id="insertLog" parameterType="com.example.med.dto.StudyCommentDto">
+        INSERT INTO STUDY_COMMENT_LOG (
+            STUDY_KEY, USER_ID, COMMENT_ID, COMMENT_TYPE,
+            ORIGINAL_TITLE, ORIGINAL_CONTENT, NEW_TITLE, NEW_CONTENT,
+            ACTION_TYPE, CREATED_AT
+        ) VALUES (
+            #{studyKey,        jdbcType=NUMERIC},
+            #{userId,          jdbcType=VARCHAR},
+            #{commentId,       jdbcType=NUMERIC},
+            'COMMENT',
+            NULL, -- 생성 시에는 원본 값이 없음
+            NULL, -- 생성 시에는 원본 값이 없음
+            #{commentTitle,    jdbcType=VARCHAR},
+            #{commentContent,  jdbcType=CLOB},
+            'C', -- 생성(Create)
+            #{createdAt,       jdbcType=TIMESTAMP}
+        )
+    </insert>
 </mapper>
