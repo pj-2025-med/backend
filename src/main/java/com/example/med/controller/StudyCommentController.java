@@ -1,8 +1,10 @@
 package com.example.med.controller;
 
+import com.example.med.dto.CommentUpdateDto;
 import com.example.med.dto.StudyCommentDto;
 import com.example.med.service.StudyCommentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -12,6 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/dicom/study")
 @RequiredArgsConstructor
+@Slf4j
 public class StudyCommentController {
 
     private final StudyCommentService studyCommentService;
@@ -39,10 +42,18 @@ public class StudyCommentController {
     public ResponseEntity<StudyCommentDto> updateStudyComment(
             @PathVariable long studyKey,
             @PathVariable long commentId,
-            @RequestBody StudyCommentDto commentUpdateDto,
+            @RequestBody CommentUpdateDto commentUpdateDto,
             @AuthenticationPrincipal String userId
     ) {
-        StudyCommentDto updatedComment = studyCommentService.updateComment(commentId, userId, commentUpdateDto);
+        commentUpdateDto.setUserId(userId);
+        commentUpdateDto.setCommentId(commentId);
+        commentUpdateDto.setStudyKey(studyKey);
+
+        StudyCommentDto updateDto = commentUpdateDto.toStudyCommentDto(commentId, studyKey, userId);
+        StudyCommentDto updatedComment = studyCommentService.updateComment(commentId, userId, updateDto, commentUpdateDto);
+
+        log.info("로그1" + updateDto.toString());
+        log.info("로그2" + commentUpdateDto.toString());
         return ResponseEntity.ok(updatedComment);
     }
 
