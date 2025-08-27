@@ -20,7 +20,7 @@ public interface StudyCommentMapper {
     int deleteComment(@Param("commentId") long commentId);
 
     //로그찍기
-    int insertLog(CommentUpdateLogDto updateDto);
+    int updateLog(CommentUpdateLogDto updateDto);
     int deleteLog(CommentDeleteLogDto commentDeleteLogDto);
-
+    int insertLog(StudyCommentDto commentDto);
 }
