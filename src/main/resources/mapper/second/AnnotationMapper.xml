@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.med.mapper.second.AnnotationMapper">
+
+    <select id="findAnnotations" resultType="com.example.med.dto.AnnotationDto">
+        SELECT
+            anno_image_id,
+            study_key,
+            series_key,
+            image_key,
+            frame_no,
+            annotations,
+            created_by,
+            TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS createdAt
+        FROM ANNO_IMAGE_JSON
+        WHERE
+            study_key = #{studyKey}
+            AND series_key = #{seriesKey}
+            AND image_key = #{imageKey}
+            <if test="frameNo != null">
+                AND frame_no = #{frameNo}
+            </if>
+    </select>
+
+    <update id="upsertAnnotations">
+        MERGE INTO ANNO_IMAGE_JSON T
+        USING (
+            SELECT
+                #{studyKey} AS study_key,
+                #{seriesKey} AS series_key,
+                #{imageKey} AS image_key,
+                NVL(#{frameNo}, -1) AS frame_no
+            FROM DUAL
+        ) S
+        ON (T.study_key = S.study_key AND T.series_key = S.series_key AND T.image_key = S.image_key AND T.frame_no = S.frame_no)
+        WHEN MATCHED THEN
+            UPDATE SET
+                T.annotations = #{annotations, jdbcType=CLOB}
+        WHEN NOT MATCHED THEN
+            INSERT (study_key, series_key, image_key, frame_no, annotations, created_by, created_at)
+            VALUES (S.study_key, S.series_key, S.image_key, S.frame_no, #{annotations, jdbcType=CLOB}, #{createdBy}, SYSTIMESTAMP)
+    </update>
+
+</mapper>

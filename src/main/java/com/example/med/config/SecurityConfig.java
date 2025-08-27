@@ -31,7 +31,6 @@ public class SecurityConfig {
         return new JwtAuthenticationFilter(jwtTokenProvider);
     }
 
-    // highlight-start
     /**
      * 개발 환경용 SecurityFilterChain (dev 프로필 활성화 시 사용)
      * 모든 요청을 허용하여 개발 및 테스트를 쉽게 합니다.
@@ -59,6 +58,9 @@ public class SecurityConfig {
     public SecurityFilterChain prodSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 세션 STATELESS 설정
+                )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 // -- Swagger UI & API Docs
@@ -75,8 +77,9 @@ public class SecurityConfig {
                                 "/api/users/login"
                         ).permitAll()
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
-                );
+                )
+                // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 추가
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
-    // highlight-end
 }
