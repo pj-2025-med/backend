@@ -66,6 +66,35 @@ public class StudyCommentService {
         if (seriesKeys == null || seriesKeys.isEmpty()) {
             throw new IllegalArgumentException("유효하지 않은 studyKey입니다: " + comment.getStudyKey());
         }
+
+        // userId, commentTitle, commentContent 암호화 후 DB 저장
+        if (comment.getUserId() != null && !comment.getUserId().isEmpty()) {
+            try {
+                String encryptedUserId = stringEncryptor.encrypt(comment.getUserId());
+                comment.setUserId(encryptedUserId);
+            } catch (Exception e) {
+                // 암호화 실패 시 원본 유지
+            }
+        }
+
+        if (comment.getCommentTitle() != null && !comment.getCommentTitle().isEmpty()) {
+            try {
+                String encryptedTitle = stringEncryptor.encrypt(comment.getCommentTitle());
+                comment.setCommentTitle(encryptedTitle);
+            } catch (Exception e) {
+                // 암호화 실패 시 원본 유지
+            }
+        }
+
+        if (comment.getCommentContent() != null && !comment.getCommentContent().isEmpty()) {
+            try {
+                String encryptedContent = stringEncryptor.encrypt(comment.getCommentContent());
+                comment.setCommentContent(encryptedContent);
+            } catch (Exception e) {
+                // 암호화 실패 시 원본 유지
+            }
+        }
+
         studyCommentMapper.insertComment(comment);
         return comment;
     }
@@ -77,9 +106,48 @@ public class StudyCommentService {
             throw new IllegalStateException("코멘트를 찾을 수 없습니다: " + commentId);
         }
 
-        if (!Objects.equals(existingComment.getUserId(), currentUserId)) {
+        // 기존 댓글의 userId를 복호화해서 권한 체크
+        String decryptedUserId = existingComment.getUserId();
+        if (decryptedUserId != null && !decryptedUserId.isEmpty()) {
+            try {
+                decryptedUserId = stringEncryptor.decrypt(decryptedUserId);
+            } catch (Exception e) {
+                // 복호화 실패 시 원본 사용
+            }
+        }
+
+        if (!Objects.equals(decryptedUserId, currentUserId)) {
             throw new IllegalStateException("코멘트를 수정할 권한이 없습니다.");
         }
+
+        // 수정할 데이터 암호화
+        if (studyCommentDto.getUserId() != null && !studyCommentDto.getUserId().isEmpty()) {
+            try {
+                String encryptedUserId = stringEncryptor.encrypt(studyCommentDto.getUserId());
+                studyCommentDto.setUserId(encryptedUserId);
+            } catch (Exception e) {
+                // 암호화 실패 시 원본 유지
+            }
+        }
+
+        if (studyCommentDto.getCommentTitle() != null && !studyCommentDto.getCommentTitle().isEmpty()) {
+            try {
+                String encryptedTitle = stringEncryptor.encrypt(studyCommentDto.getCommentTitle());
+                studyCommentDto.setCommentTitle(encryptedTitle);
+            } catch (Exception e) {
+                // 암호화 실패 시 원본 유지
+            }
+        }
+
+        if (studyCommentDto.getCommentContent() != null && !studyCommentDto.getCommentContent().isEmpty()) {
+            try {
+                String encryptedContent = stringEncryptor.encrypt(studyCommentDto.getCommentContent());
+                studyCommentDto.setCommentContent(encryptedContent);
+            } catch (Exception e) {
+                // 암호화 실패 시 원본 유지
+            }
+        }
+
         studyCommentDto.setCommentId(commentId);
         studyCommentMapper.updateComment(studyCommentDto);
         studyCommentMapper.insertLog(commentUpdateLogDto);
@@ -99,8 +167,17 @@ public class StudyCommentService {
             throw new IllegalStateException("코멘트를 찾을 수 없습니다: " + commentId);
         }
 
-        // 2. 코멘트 작성자와 현재 로그인한 사용자가 동일한지 확인 (권한 체크)
-        if (!Objects.equals(existingComment.getUserId(), currentUserId)) {
+        // 2. 기존 댓글의 userId를 복호화해서 권한 체크
+        String decryptedUserId = existingComment.getUserId();
+        if (decryptedUserId != null && !decryptedUserId.isEmpty()) {
+            try {
+                decryptedUserId = stringEncryptor.decrypt(decryptedUserId);
+            } catch (Exception e) {
+                // 복호화 실패 시 원본 사용
+            }
+        }
+
+        if (!Objects.equals(decryptedUserId, currentUserId)) {
             throw new IllegalStateException("코멘트를 삭제할 권한이 없습니다.");
         }
 
