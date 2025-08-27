@@ -50,4 +50,41 @@
         WHERE comment_id = #{commentId}
     </delete>
 
+    <!--로그 찍기 -->
+    <resultMap id="CommentUpdateDto" type="com.example.med.dto.CommentUpdateDto">
+        <id     property="logId"          column="LOG_ID"/>
+        <result property="studyKey"       column="STUDY_KEY"/>
+        <result property="userId"         column="USER_ID"/>
+        <result property="commentId"      column="COMMENT_ID"/>
+        <result property="commentType"    column="COMMENT_TYPE"/>
+        <result property="originalTitle"  column="ORIGINAL_TITLE"/>
+        <result property="originalContent" column="ORIGINAL_CONTENT"/>
+        <result property="newTitle"       column="NEW_TITLE"/>
+        <result property="newContent"     column="NEW_CONTENT"/>
+        <result property="actionType"     column="ACTION_TYPE"/>
+        <result property="createdAt"      column="CREATED_AT"/>
+        <result property="updatedAt"      column="UPDATED_AT"/>
+    </resultMap>
+
+    <insert id="insertLog"
+            parameterType="com.example.med.dto.CommentUpdateDto">
+        INSERT INTO STUDY_COMMENT_LOG (
+        STUDY_KEY, USER_ID, COMMENT_ID, COMMENT_TYPE,
+        ORIGINAL_TITLE, ORIGINAL_CONTENT, NEW_TITLE, NEW_CONTENT,
+        ACTION_TYPE, CREATED_AT
+        ) VALUES (
+        #{studyKey,        jdbcType=NUMERIC},
+        #{userId,          jdbcType=VARCHAR},
+        #{commentId,       jdbcType=NUMERIC},
+        'COMMENT',                                  <!-- 필요시 동적으로 바꾸면 아래 두 번째 INSERT 참고 -->
+        #{originalTitle,   jdbcType=VARCHAR},
+        #{originalContent, jdbcType=VARCHAR},
+        #{commentTitle,    jdbcType=VARCHAR},
+        #{commentContent,  jdbcType=CLOB},
+        'U',                                        <!-- 생성=C, 수정=U, 삭제=D 등 -->
+        NVL(#{createdAt,  jdbcType=VARCHAR},
+        TO_CHAR(SYSTIMESTAMP, 'YYYY-MM-DD"T"HH24:MI:SS'))
+        )
+    </insert>
+
 </mapper>

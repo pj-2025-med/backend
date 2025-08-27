@@ -1,5 +1,6 @@
 package com.example.med.service;
 
+import com.example.med.dto.CommentUpdateDto;
 import com.example.med.dto.StudyCommentDto;
 import com.example.med.mapper.DicomMapper;
 import com.example.med.mapper.StudyCommentMapper;
@@ -33,7 +34,7 @@ public class StudyCommentService {
     }
 
     @Transactional
-    public StudyCommentDto updateComment(long commentId, String currentUserId, StudyCommentDto commentUpdateDto) {
+    public StudyCommentDto updateComment(long commentId, String currentUserId, StudyCommentDto studyCommentDto, CommentUpdateDto commentUpdateDto) {
         StudyCommentDto existingComment = studyCommentMapper.findCommentById(commentId);
         if (existingComment == null) {
             throw new IllegalStateException("코멘트를 찾을 수 없습니다: " + commentId);
@@ -42,9 +43,9 @@ public class StudyCommentService {
         if (!Objects.equals(existingComment.getUserId(), currentUserId)) {
             throw new IllegalStateException("코멘트를 수정할 권한이 없습니다.");
         }
-
-        commentUpdateDto.setCommentId(commentId);
-        studyCommentMapper.updateComment(commentUpdateDto);
+        studyCommentDto.setCommentId(commentId);
+        studyCommentMapper.updateComment(studyCommentDto);
+        studyCommentMapper.insertLog(commentUpdateDto);
         return studyCommentMapper.findCommentById(commentId);
     }
 
