@@ -6,6 +6,7 @@ import com.example.med.dto.StudyCommentDto;
 import com.example.med.mapper.DicomMapper;
 import com.example.med.mapper.StudyCommentMapper;
 import lombok.RequiredArgsConstructor;
+import org.jasypt.encryption.StringEncryptor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +19,45 @@ public class StudyCommentService {
 
     private final DicomMapper dicomMapper; // 메인 DB 매퍼
     private final StudyCommentMapper studyCommentMapper; // 서브 DB 매퍼
+    private final StringEncryptor stringEncryptor; // Jasypt 암호/복호화
 
     @Transactional(readOnly = true)
     public List<StudyCommentDto> getCommentsByStudyKey(long studyKey) {
-        return studyCommentMapper.findCommentsByStudyKey(studyKey);
+        List<StudyCommentDto> comments = studyCommentMapper.findCommentsByStudyKey(studyKey);
+        for (StudyCommentDto comment : comments) {
+            // userId 복호화
+            String encryptedUserId = comment.getUserId();
+            if (encryptedUserId != null && !encryptedUserId.isEmpty()) {
+                try {
+                    String decryptedUserId = stringEncryptor.decrypt(encryptedUserId);
+                    comment.setUserId(decryptedUserId);
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+            // commentTitle 복호화
+            String encryptedTitle = comment.getCommentTitle();
+            if (encryptedTitle != null && !encryptedTitle.isEmpty()) {
+                try {
+                    String decryptedTitle = stringEncryptor.decrypt(encryptedTitle);
+                    comment.setCommentTitle(decryptedTitle);
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+            // commentContent 복호화
+            String encryptedContent = comment.getCommentContent();
+            if (encryptedContent != null && !encryptedContent.isEmpty()) {
+                try {
+                    String decryptedContent = stringEncryptor.decrypt(encryptedContent);
+                    comment.setCommentContent(decryptedContent);
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+        }
+        // CommentId, createdAt, updatedAt 필드는 복호화하지 않음 -> String 타입만 암호화 가능하기에 변환을 해야하고, 굳이 이건
+        return comments;
     }
 
     @Transactional
