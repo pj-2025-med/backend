@@ -51,7 +51,7 @@
     </delete>
 
     <!--로그 찍기 -->
-    <resultMap id="CommentUpdateDto" type="com.example.med.dto.CommentUpdateDto">
+    <resultMap id="CommentUpdateDto" type="com.example.med.dto.logDto.CommentUpdateLogDto">
         <id     property="logId"          column="LOG_ID"/>
         <result property="studyKey"       column="STUDY_KEY"/>
         <result property="userId"         column="USER_ID"/>
@@ -67,7 +67,7 @@
     </resultMap>
 
     <insert id="insertLog"
-            parameterType="com.example.med.dto.CommentUpdateDto">
+            parameterType="com.example.med.dto.logDto.CommentUpdateLogDto">
         INSERT INTO STUDY_COMMENT_LOG (
         STUDY_KEY, USER_ID, COMMENT_ID, COMMENT_TYPE,
         ORIGINAL_TITLE, ORIGINAL_CONTENT, NEW_TITLE, NEW_CONTENT,
@@ -83,6 +83,27 @@
         #{commentContent,  jdbcType=CLOB},
         'U',                                        <!-- 생성=C, 수정=U, 삭제=D 등 -->
         NVL(#{createdAt,  jdbcType=VARCHAR},
+        TO_CHAR(SYSTIMESTAMP, 'YYYY-MM-DD"T"HH24:MI:SS'))
+        )
+    </insert>
+
+    <insert id="deleteLog"
+            parameterType="com.example.med.dto.logDto.CommentDeleteLogDto">
+        INSERT INTO STUDY_COMMENT_LOG (
+        STUDY_KEY, USER_ID, COMMENT_ID, COMMENT_TYPE,
+        ORIGINAL_TITLE, ORIGINAL_CONTENT, NEW_TITLE, NEW_CONTENT,
+        ACTION_TYPE, CREATED_AT
+        ) VALUES (
+        #{studyKey,    jdbcType=NUMERIC},
+        #{userId,      jdbcType=VARCHAR},
+        #{commentId,   jdbcType=NUMERIC},
+        'COMMENT',
+        NULLIF(#{originalTitle,   jdbcType=VARCHAR}, ''),
+        NULLIF(#{originalContent, jdbcType=VARCHAR}, ''),
+        NULL,   -- 삭제 로그라면 new_*는 보통 NULL
+        NULL,
+        'D',
+        NVL(NULLIF(#{createdAt, jdbcType=VARCHAR}, ''),
         TO_CHAR(SYSTIMESTAMP, 'YYYY-MM-DD"T"HH24:MI:SS'))
         )
     </insert>

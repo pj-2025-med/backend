@@ -1,6 +1,7 @@
 package com.example.med.mapper;
 
-import com.example.med.dto.CommentUpdateDto;
+import com.example.med.dto.logDto.CommentDeleteLogDto;
+import com.example.med.dto.logDto.CommentUpdateLogDto;
 import com.example.med.dto.StudyCommentDto;
 import org.apache.ibatis.annotations.Param;
 
@@ -19,6 +20,7 @@ public interface StudyCommentMapper {
     int deleteComment(@Param("commentId") long commentId);
 
     //로그찍기
-    int insertLog(CommentUpdateDto updateDto);
+    int insertLog(CommentUpdateLogDto updateDto);
+    int deleteLog(CommentDeleteLogDto commentDeleteLogDto);
 
 }

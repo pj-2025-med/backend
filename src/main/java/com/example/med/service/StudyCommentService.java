@@ -1,6 +1,7 @@
 package com.example.med.service;
 
-import com.example.med.dto.CommentUpdateDto;
+import com.example.med.dto.logDto.CommentDeleteLogDto;
+import com.example.med.dto.logDto.CommentUpdateLogDto;
 import com.example.med.dto.StudyCommentDto;
 import com.example.med.mapper.DicomMapper;
 import com.example.med.mapper.StudyCommentMapper;
@@ -34,7 +35,7 @@ public class StudyCommentService {
     }
 
     @Transactional
-    public StudyCommentDto updateComment(long commentId, String currentUserId, StudyCommentDto studyCommentDto, CommentUpdateDto commentUpdateDto) {
+    public StudyCommentDto updateComment(long commentId, String currentUserId, StudyCommentDto studyCommentDto, CommentUpdateLogDto commentUpdateLogDto) {
         StudyCommentDto existingComment = studyCommentMapper.findCommentById(commentId);
         if (existingComment == null) {
             throw new IllegalStateException("코멘트를 찾을 수 없습니다: " + commentId);
@@ -45,7 +46,7 @@ public class StudyCommentService {
         }
         studyCommentDto.setCommentId(commentId);
         studyCommentMapper.updateComment(studyCommentDto);
-        studyCommentMapper.insertLog(commentUpdateDto);
+        studyCommentMapper.insertLog(commentUpdateLogDto);
         return studyCommentMapper.findCommentById(commentId);
     }
 
@@ -55,7 +56,7 @@ public class StudyCommentService {
      * @param currentUserId 현재 로그인한 사용자의 ID
      */
     @Transactional
-    public void deleteComment(long commentId, String currentUserId) {
+    public void deleteComment(long commentId, String currentUserId, CommentDeleteLogDto commentDeleteLogDto) {
         // 1. 삭제할 코멘트가 DB에 존재하는지 확인
         StudyCommentDto existingComment = studyCommentMapper.findCommentById(commentId);
         if (existingComment == null) {
@@ -69,5 +70,6 @@ public class StudyCommentService {
 
         // 3. DB에서 코멘트 삭제
         studyCommentMapper.deleteComment(commentId);
+        studyCommentMapper.deleteLog(commentDeleteLogDto);
     }
 }
