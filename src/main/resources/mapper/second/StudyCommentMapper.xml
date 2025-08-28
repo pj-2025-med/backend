@@ -133,4 +133,43 @@
             #{createdAt,       jdbcType=TIMESTAMP}
         )
     </insert>
+
+    <select id="showAllLogs" resultType="com.example.med.dto.logDto.LogShowDto">
+        SELECT
+            LOG_ID           as logId,
+            STUDY_KEY        as studyKey,
+            USER_ID          as userId,
+            COMMENT_ID       as commentId,
+            COMMENT_TYPE     as commentType,
+            ORIGINAL_TITLE   as originalTitle,
+            ORIGINAL_CONTENT as originalContent,
+            NEW_TITLE        as newTitle,
+            NEW_CONTENT      as newContent,
+            ACTION_TYPE      as actionType,
+            CREATED_AT       as createdAt,
+            UPDATED_AT       as updatedAt
+        FROM
+            STUDY_COMMENT_LOG
+        ORDER BY
+            LOG_ID DESC
+    </select>
+
+    <insert id="insertAnnoLog" parameterType="com.example.med.dto.logDto.AnnoDto">
+        INSERT INTO STUDY_COMMENT_LOG (
+        STUDY_KEY, USER_ID, COMMENT_ID, COMMENT_TYPE,
+        ORIGINAL_TITLE, ORIGINAL_CONTENT, NEW_TITLE, NEW_CONTENT,
+        ACTION_TYPE, CREATED_AT
+        ) VALUES (
+        #{studyKey,        jdbcType=NUMERIC},
+        #{createdBy,          jdbcType=VARCHAR},
+        #{annoImageId,       jdbcType=NUMERIC},
+        'Annotation',
+        NULL, -- 생성 시에는 원본 값이 없음
+        NULL, -- 생성 시에는 원본 값이 없음
+        NULL,
+        #{annotation,  jdbcType=CLOB},
+        'C', -- 생성(Create)
+        #{createdAt,       jdbcType=TIMESTAMP}
+        )
+    </insert>
 </mapper>

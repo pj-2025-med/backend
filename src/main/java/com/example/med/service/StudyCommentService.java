@@ -3,6 +3,7 @@ package com.example.med.service;
 import com.example.med.dto.logDto.CommentDeleteLogDto;
 import com.example.med.dto.logDto.CommentUpdateLogDto;
 import com.example.med.dto.StudyCommentDto;
+import com.example.med.dto.logDto.LogShowDto;
 import com.example.med.mapper.DicomMapper;
 import com.example.med.mapper.StudyCommentMapper;
 import lombok.RequiredArgsConstructor;
@@ -215,5 +216,12 @@ public class StudyCommentService {
 
         // 5. 삭제 로그 기록
         studyCommentMapper.deleteLog(commentDeleteLogDto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<LogShowDto> getAllLogs() {
+
+        // DB에서 가져온 암호화된 로그 데이터를 복호화합니다.
+        return studyCommentMapper.showAllLogs();
     }
 }
