@@ -23,7 +23,11 @@ public interface StudyCommentMapper {
     int deleteLog(CommentDeleteLogDto commentDeleteLogDto);
     int insertLog(StudyCommentDto commentDto);
 
-    List<LogShowDto> showAllLogs();
+//    List<LogShowDto> showAllLogs();
+List<LogShowDto> showAllLogs(@Param("page") Integer page,
+                             @Param("size") Integer size);
     int insertAnnoLog(AnnoDto annoDto);
     int insertAnnoUpdateLog(AnnoUpdateDto annoUpdateDto);
+
+    int insertViewLog(ViewLogDto viewLogDto);
 }

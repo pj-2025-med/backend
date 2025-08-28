@@ -218,10 +218,10 @@ public class StudyCommentService {
         studyCommentMapper.deleteLog(commentDeleteLogDto);
     }
 
-    @Transactional(readOnly = true)
-    public List<LogShowDto> getAllLogs() {
-
-        // DB에서 가져온 암호화된 로그 데이터를 복호화합니다.
-        return studyCommentMapper.showAllLogs();
+    @Transactional
+    public List<LogShowDto> getAllLogs(Integer page, Integer size) {
+        int p = (page == null || page < 1) ? 1 : page;
+        int s = (size == null || size < 1) ? 20 : Math.min(size, 100); // 안전 상한
+        return studyCommentMapper.showAllLogs(p, s);
     }
 }
