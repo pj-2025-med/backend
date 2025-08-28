@@ -133,4 +133,24 @@
             #{createdAt,       jdbcType=TIMESTAMP}
         )
     </insert>
+
+    <select id="showAllLogs" resultType="com.example.med.dto.logDto.LogShowDto">
+        SELECT
+            LOG_ID           as logId,
+            STUDY_KEY        as studyKey,
+            USER_ID          as userId,
+            COMMENT_ID       as commentId,
+            COMMENT_TYPE     as commentType,
+            ORIGINAL_TITLE   as originalTitle,
+            ORIGINAL_CONTENT as originalContent,
+            NEW_TITLE        as newTitle,
+            NEW_CONTENT      as newContent,
+            ACTION_TYPE      as actionType,
+            CREATED_AT       as createdAt,
+            UPDATED_AT       as updatedAt
+        FROM
+            STUDY_COMMENT_LOG
+        ORDER BY
+            LOG_ID DESC
+    </select>
 </mapper>
