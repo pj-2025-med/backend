@@ -1,5 +1,6 @@
 package com.example.med.mapper;
 
+import com.example.med.dto.logDto.AnnoDto;
 import com.example.med.dto.logDto.CommentDeleteLogDto;
 import com.example.med.dto.logDto.CommentUpdateLogDto;
 import com.example.med.dto.StudyCommentDto;
@@ -26,5 +27,5 @@ public interface StudyCommentMapper {
     int insertLog(StudyCommentDto commentDto);
 
     List<LogShowDto> showAllLogs();
-
+    int insertAnnoLog(AnnoDto annoDto);
 }
