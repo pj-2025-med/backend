@@ -22,23 +22,53 @@
             </if>
     </select>
 
-    <update id="upsertAnnotations">
-        MERGE INTO ANNO_IMAGE_JSON T
-        USING (
-            SELECT
-                #{studyKey} AS study_key,
-                #{seriesKey} AS series_key,
-                #{imageKey} AS image_key,
-                NVL(#{frameNo}, -1) AS frame_no
-            FROM DUAL
-        ) S
-        ON (T.study_key = S.study_key AND T.series_key = S.series_key AND T.image_key = S.image_key AND T.frame_no = S.frame_no)
-        WHEN MATCHED THEN
-            UPDATE SET
-                T.annotations = #{annotations, jdbcType=CLOB}
-        WHEN NOT MATCHED THEN
-            INSERT (study_key, series_key, image_key, frame_no, annotations, created_by, created_at)
-            VALUES (S.study_key, S.series_key, S.image_key, S.frame_no, #{annotations, jdbcType=CLOB}, #{createdBy}, SYSTIMESTAMP)
-    </update>
+    <update id="upsertAnnotations" parameterType="com.example.med.dto.logDto.AnnoDto"
+            statementType="CALLABLE">
+  <![CDATA[
+        DECLARE
+        v_frame_no   NUMBER := NVL(#{frameNo,jdbcType=NUMERIC}, -1);
+        v_id         NUMBER;
+      v_created_at TIMESTAMP;
+        BEGIN
+      -- 1) 먼저 UPDATE 시도
+        UPDATE ANNO_IMAGE_JSON
+        SET annotations = #{annotations, jdbcType=CLOB}
+        WHERE study_key = #{studyKey, jdbcType=NUMERIC}
+          AND series_key = #{seriesKey, jdbcType=NUMERIC}
+          AND image_key  = #{imageKey, jdbcType=NUMERIC}
+          AND frame_no   = v_frame_no;
+
+        IF SQL%ROWCOUNT = 0 THEN
+        -- 2) 없으면 INSERT + RETURNING
+        INSERT INTO ANNO_IMAGE_JSON
+          (study_key, series_key, image_key, frame_no,
+           annotations, created_by, created_at)
+        VALUES
+          (#{studyKey, jdbcType=NUMERIC},
+        #{seriesKey, jdbcType=NUMERIC},
+        #{imageKey,  jdbcType=NUMERIC},
+        v_frame_no,
+        #{annotations, jdbcType=CLOB},
+        #{createdBy,  jdbcType=VARCHAR},
+        SYSTIMESTAMP)
+        RETURNING anno_image_id, created_at
+        INTO v_id, v_created_at;
+        ELSE
+        -- 3) 업데이트였다면 기존 PK, CREATED_AT 조회
+        SELECT anno_image_id, created_at
+        INTO v_id, v_created_at
+        FROM ANNO_IMAGE_JSON
+        WHERE study_key = #{studyKey, jdbcType=NUMERIC}
+          AND series_key = #{seriesKey, jdbcType=NUMERIC}
+          AND image_key  = #{imageKey, jdbcType=NUMERIC}
+          AND frame_no   = v_frame_no;
+        END IF;
+
+      -- OUT 파라미터로 반환
+        #{annoImageId, mode=OUT, jdbcType=NUMERIC} := v_id;
+        #{createdAt,   mode=OUT, jdbcType=TIMESTAMP} := v_created_at;
+        END;
+        ]]>
+</update>
 
 </mapper>

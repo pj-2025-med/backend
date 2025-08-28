@@ -35,6 +35,8 @@ public class AnnotationService {
         annoDto.setCreatedBy(userId);
         // H2 DB는 MERGE, Oracle은 MERGE INTO를 사용해 UPSERT 처리
         annotationMapper.upsertAnnotations(dto);
+        annoDto.setAnnoImageId(dto.getAnnoImageId());
+        annoDto.setCreatedAt(dto.getCreatedAt());
         studyCommentMapper.insertAnnoLog(annoDto);
     }
 

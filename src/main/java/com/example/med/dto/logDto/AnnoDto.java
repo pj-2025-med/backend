@@ -12,5 +12,5 @@ public class AnnoDto {
     private Long imageKey;
     private String annotation;
     private String createdBy;
-    private LocalDateTime createdAt;
+    private String createdAt;
 }
