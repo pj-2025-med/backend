@@ -22,23 +22,76 @@
             </if>
     </select>
 
-    <update id="upsertAnnotations">
-        MERGE INTO ANNO_IMAGE_JSON T
-        USING (
-            SELECT
-                #{studyKey} AS study_key,
-                #{seriesKey} AS series_key,
-                #{imageKey} AS image_key,
-                NVL(#{frameNo}, -1) AS frame_no
-            FROM DUAL
-        ) S
-        ON (T.study_key = S.study_key AND T.series_key = S.series_key AND T.image_key = S.image_key AND T.frame_no = S.frame_no)
-        WHEN MATCHED THEN
-            UPDATE SET
-                T.annotations = #{annotations, jdbcType=CLOB}
-        WHEN NOT MATCHED THEN
-            INSERT (study_key, series_key, image_key, frame_no, annotations, created_by, created_at)
-            VALUES (S.study_key, S.series_key, S.image_key, S.frame_no, #{annotations, jdbcType=CLOB}, #{createdBy}, SYSTIMESTAMP)
-    </update>
+    <update id="upsertAnnotations"
+            parameterType="com.example.med.dto.AnnotationDto"
+            statementType="CALLABLE">
+  <![CDATA[
+        DECLARE
+        v_frame_no      NUMBER   := NVL(#{frameNo, jdbcType=NUMERIC}, -1);
+        v_id            NUMBER;
+    v_created_at    TIMESTAMP;
+    v_was_updated   NUMBER := 0;   -- 0: insert, 1: update
+
+    v_orig_src      CLOB;          -- 행에서 읽어온 원본(로케이터)
+    v_orig_out      CLOB;          -- 임시 LOB(여기에 복사해서 OUT으로 반환)
+        BEGIN
+        BEGIN
+      -- 1) 존재하면 원본 LOB/PK/생성시각 읽기
+        SELECT annotations, anno_image_id, created_at
+        INTO v_orig_src, v_id, v_created_at
+        FROM ANNO_IMAGE_JSON
+        WHERE study_key = #{studyKey, jdbcType=NUMERIC}
+          AND series_key = #{seriesKey, jdbcType=NUMERIC}
+          AND image_key  = #{imageKey,  jdbcType=NUMERIC}
+          AND frame_no   = v_frame_no
+            FOR UPDATE NOWAIT;
+
+        -- 2) OUT용 임시 LOB 생성 및 복사 (여기가 핵심)
+        DBMS_LOB.CREATETEMPORARY(v_orig_out, TRUE);  -- cache = TRUE
+      IF v_orig_src IS NOT NULL THEN
+        DBMS_LOB.APPEND(v_orig_out, v_orig_src);
+        END IF;
+
+      -- 3) UPDATE
+        UPDATE ANNO_IMAGE_JSON
+        SET annotations = #{annotations, jdbcType=CLOB}
+        WHERE anno_image_id = v_id;
+
+        v_was_updated := 1;
+
+        EXCEPTION
+      WHEN NO_DATA_FOUND THEN
+        -- 행이 없으면 INSERT + RETURNING
+        INSERT INTO ANNO_IMAGE_JSON
+          (study_key, series_key, image_key, frame_no,
+           annotations, created_by, created_at)
+        VALUES
+          (#{studyKey, jdbcType=NUMERIC},
+        #{seriesKey, jdbcType=NUMERIC},
+        #{imageKey,  jdbcType=NUMERIC},
+        v_frame_no,
+        #{annotations, jdbcType=CLOB},
+        #{createdBy,  jdbcType=VARCHAR},
+        SYSTIMESTAMP)
+        RETURNING anno_image_id, created_at
+        INTO v_id, v_created_at;
+
+        v_orig_out    := NULL;  -- INSERT이므로 원본 없음
+        v_was_updated := 0;
+        END;
+
+    -- OUT 파라미터: 반드시 블록 안에서 대입
+        #{annoImageId,         mode=OUT, jdbcType=NUMERIC}   := v_id;
+        #{createdAt,           mode=OUT, jdbcType=TIMESTAMP} := v_created_at;
+        #{wasUpdated,          mode=OUT, jdbcType=NUMERIC}   := v_was_updated;
+        #{originalAnnotations, mode=OUT, jdbcType=CLOB}      := v_orig_out;
+
+    -- 주의: 여기서 DBMS_LOB.FREETEMPORARY(v_orig_out) 호출하지 마라.
+    --      (해제하면 클라이언트가 OUT을 읽을 때 또 ORA-22922 발생)
+        END;
+        ]]>
+</update>
+
+
 
 </mapper>

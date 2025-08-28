@@ -134,24 +134,49 @@
         )
     </insert>
 
-    <select id="showAllLogs" resultType="com.example.med.dto.logDto.LogShowDto">
-        SELECT
-            LOG_ID           as logId,
-            STUDY_KEY        as studyKey,
-            USER_ID          as userId,
-            COMMENT_ID       as commentId,
-            COMMENT_TYPE     as commentType,
-            ORIGINAL_TITLE   as originalTitle,
-            ORIGINAL_CONTENT as originalContent,
-            NEW_TITLE        as newTitle,
-            NEW_CONTENT      as newContent,
-            ACTION_TYPE      as actionType,
-            CREATED_AT       as createdAt,
-            UPDATED_AT       as updatedAt
-        FROM
-            STUDY_COMMENT_LOG
-        ORDER BY
-            LOG_ID DESC
+<!--    <select id="showAllLogs" resultType="com.example.med.dto.logDto.LogShowDto">-->
+<!--        SELECT-->
+<!--            LOG_ID           as logId,-->
+<!--            STUDY_KEY        as studyKey,-->
+<!--            USER_ID          as userId,-->
+<!--            COMMENT_ID       as commentId,-->
+<!--            COMMENT_TYPE     as commentType,-->
+<!--            ORIGINAL_TITLE   as originalTitle,-->
+<!--            ORIGINAL_CONTENT as originalContent,-->
+<!--            NEW_TITLE        as newTitle,-->
+<!--            NEW_CONTENT      as newContent,-->
+<!--            ACTION_TYPE      as actionType,-->
+<!--            CREATED_AT       as createdAt,-->
+<!--            UPDATED_AT       as updatedAt-->
+<!--        FROM-->
+<!--            STUDY_COMMENT_LOG-->
+<!--        ORDER BY-->
+<!--            LOG_ID DESC-->
+<!--    </select>-->
+
+    <select id="showAllLogs"
+            parameterType="map"
+            resultType="com.example.med.dto.logDto.LogShowDto">
+        <![CDATA[
+    SELECT
+      LOG_ID           AS logId,
+      STUDY_KEY        AS studyKey,
+      USER_ID          AS userId,
+      COMMENT_ID       AS commentId,
+      COMMENT_TYPE     AS commentType,
+      ORIGINAL_TITLE   AS originalTitle,
+      ORIGINAL_CONTENT AS originalContent,
+      NEW_TITLE        AS newTitle,
+      NEW_CONTENT      AS newContent,
+      ACTION_TYPE      AS actionType,
+      CREATED_AT       AS createdAt,
+      UPDATED_AT       AS updatedAt
+    FROM STUDY_COMMENT_LOG
+    WHERE (ACTION_TYPE <> 'R' OR ACTION_TYPE IS NULL)
+    ORDER BY LOG_ID DESC
+    OFFSET ((NVL(#{page, jdbcType=INTEGER}, 1) - 1) * #{size, jdbcType=INTEGER}) ROWS
+    FETCH NEXT #{size, jdbcType=INTEGER} ROWS ONLY
+  ]]>
     </select>
 
     <insert id="insertAnnoLog" parameterType="com.example.med.dto.logDto.AnnoDto">
@@ -172,4 +197,46 @@
         #{createdAt,       jdbcType=TIMESTAMP}
         )
     </insert>
+
+    <insert id="insertAnnoUpdateLog"
+            parameterType="com.example.med.dto.logDto.AnnoUpdateDto">
+        INSERT INTO STUDY_COMMENT_LOG (
+        STUDY_KEY, USER_ID, COMMENT_ID, COMMENT_TYPE,
+        ORIGINAL_TITLE, ORIGINAL_CONTENT, NEW_TITLE, NEW_CONTENT,
+        ACTION_TYPE, CREATED_AT
+        ) VALUES (
+        #{studyKey,   jdbcType=NUMERIC},
+        #{createdBy,  jdbcType=VARCHAR},
+        #{commentId,  jdbcType=NUMERIC},
+        'Annotation',
+        NULL,
+        #{originalContent, jdbcType=CLOB},
+        NULL,
+        #{newContent,      jdbcType=CLOB},
+        'U',
+        #{createdAt,       jdbcType=TIMESTAMP}
+        )
+    </insert>
+
+    <insert id="insertViewLog"
+            parameterType="com.example.med.dto.logDto.ViewLogDto">
+        INSERT INTO STUDY_COMMENT_LOG (
+        STUDY_KEY, USER_ID, COMMENT_ID, COMMENT_TYPE,
+        ORIGINAL_TITLE, ORIGINAL_CONTENT, NEW_TITLE, NEW_CONTENT,
+        ACTION_TYPE, CREATED_AT
+        ) VALUES (
+        #{studyKey, jdbcType=NUMERIC},
+        #{userId,   jdbcType=VARCHAR},
+        NULL,       -- COMMENT_ID
+        NULL,       -- COMMENT_TYPE
+        NULL,       -- ORIGINAL_TITLE
+        NULL,       -- ORIGINAL_CONTENT
+        NULL,       -- NEW_TITLE
+        NULL,       -- NEW_CONTENT
+        'R',        -- ACTION_TYPE = Read(View)
+        NVL(#{createdAt, jdbcType=TIMESTAMP}, SYSTIMESTAMP)
+        )
+    </insert>
+
+
 </mapper>

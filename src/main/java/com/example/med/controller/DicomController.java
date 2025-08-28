@@ -2,12 +2,14 @@ package com.example.med.controller;
 
 import com.example.med.dto.DicomStudyDto;
 import com.example.med.service.DicomService;
+import com.example.med.service.ViewLogService;
 import com.example.med.util.DicomUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -21,6 +23,7 @@ public class DicomController {
 
     private final DicomService dicomService;
     private final DicomUtil dicomUtil;
+    private final ViewLogService viewLogService;
 
     // studyKey 내 seriesKey 목록
     @GetMapping("/studies/{studyKey}/series")
@@ -57,7 +60,9 @@ public class DicomController {
 
     @GetMapping("/studies/{studyKey}")
     @ResponseBody
-    public DicomStudyDto studyDicomRaw(@PathVariable long studyKey) throws IOException {
+    public DicomStudyDto studyDicomRaw(@PathVariable long studyKey,
+                                       @AuthenticationPrincipal String userId) throws IOException {
+        viewLogService.viewLog(userId, studyKey);
         return dicomService. getStudyDicom(studyKey);
     }
 
