@@ -1,10 +1,7 @@
 package com.example.med.mapper;
 
-import com.example.med.dto.logDto.AnnoDto;
-import com.example.med.dto.logDto.CommentDeleteLogDto;
-import com.example.med.dto.logDto.CommentUpdateLogDto;
+import com.example.med.dto.logDto.*;
 import com.example.med.dto.StudyCommentDto;
-import com.example.med.dto.logDto.LogShowDto;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -28,4 +25,5 @@ public interface StudyCommentMapper {
 
     List<LogShowDto> showAllLogs();
     int insertAnnoLog(AnnoDto annoDto);
+    int insertAnnoUpdateLog(AnnoUpdateDto annoUpdateDto);
 }
