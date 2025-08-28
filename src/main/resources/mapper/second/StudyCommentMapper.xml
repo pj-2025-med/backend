@@ -172,4 +172,24 @@
         #{createdAt,       jdbcType=TIMESTAMP}
         )
     </insert>
+
+    <insert id="insertAnnoUpdateLog"
+            parameterType="com.example.med.dto.logDto.AnnoUpdateDto">
+        INSERT INTO STUDY_COMMENT_LOG (
+        STUDY_KEY, USER_ID, COMMENT_ID, COMMENT_TYPE,
+        ORIGINAL_TITLE, ORIGINAL_CONTENT, NEW_TITLE, NEW_CONTENT,
+        ACTION_TYPE, CREATED_AT
+        ) VALUES (
+        #{studyKey,   jdbcType=NUMERIC},
+        #{createdBy,  jdbcType=VARCHAR},
+        #{commentId,  jdbcType=NUMERIC},
+        'Annotation',
+        NULL,
+        #{originalContent, jdbcType=CLOB},
+        NULL,
+        #{newContent,      jdbcType=CLOB},
+        'U',
+        #{createdAt,       jdbcType=TIMESTAMP}
+        )
+    </insert>
 </mapper>

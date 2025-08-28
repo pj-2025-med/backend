@@ -18,7 +18,8 @@ public class AnnotationDto {
     private String createdBy;
     private String createdAt;
 
-
+    private Integer wasUpdated;
+    private String originalAnnotations;
     public static AnnoDto toAnnoDto(AnnotationDto dto) {
         if (dto == null) return null;
 

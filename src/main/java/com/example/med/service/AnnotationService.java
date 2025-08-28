@@ -2,6 +2,7 @@ package com.example.med.service;
 
 import com.example.med.dto.AnnotationDto;
 import com.example.med.dto.logDto.AnnoDto;
+import com.example.med.dto.logDto.AnnoUpdateDto;
 import com.example.med.mapper.StudyCommentMapper;
 import com.example.med.mapper.second.AnnotationMapper;
 import lombok.RequiredArgsConstructor;
@@ -22,23 +23,43 @@ public class AnnotationService {
     }
 
     @Transactional
-    public void saveAnnotations(long studyKey, long seriesKey, long imageKey, Integer frameNo, String annotations, String userId) {
+    public void saveAnnotations(long studyKey, long seriesKey, long imageKey,
+                                Integer frameNo, String annotations, String userId) {
+
         AnnotationDto dto = new AnnotationDto();
         dto.setStudyKey(studyKey);
         dto.setSeriesKey(seriesKey);
         dto.setImageKey(imageKey);
-        dto.setFrameNo(frameNo != null ? frameNo : -1);
+        dto.setFrameNo(frameNo); // null이면 매퍼에서 NVL(-1)
         dto.setAnnotations(annotations);
         dto.setCreatedBy(userId);
 
-        AnnoDto annoDto = AnnotationDto.toAnnoDto(dto);
-        annoDto.setCreatedBy(userId);
-        // H2 DB는 MERGE, Oracle은 MERGE INTO를 사용해 UPSERT 처리
         annotationMapper.upsertAnnotations(dto);
-        annoDto.setAnnoImageId(dto.getAnnoImageId());
-        annoDto.setCreatedAt(dto.getCreatedAt());
-        studyCommentMapper.insertAnnoLog(annoDto);
+
+        if (dto.getWasUpdated() != null && dto.getWasUpdated() == 1) {
+            // UPDATE 로그
+            AnnoUpdateDto upd = new AnnoUpdateDto();
+            upd.setStudyKey(studyKey);
+            upd.setSeriesKey(seriesKey);
+            upd.setImageKey(imageKey);
+            upd.setFrameNo(frameNo != null ? frameNo : -1);
+            upd.setCommentId(dto.getAnnoImageId());                 // COMMENT_ID = annoImageId
+            upd.setOriginalContent(dto.getOriginalAnnotations());   // DB의 예전 값
+            upd.setNewContent(annotations);                         // 새 값
+            upd.setCreatedBy(userId);
+            upd.setCreatedAt(java.time.LocalDateTime.now());
+            studyCommentMapper.insertAnnoUpdateLog(upd);
+        } else {
+            // INSERT 로그 (기존 C 로그)
+            AnnoDto annoDto = new AnnoDto();
+            annoDto.setAnnoImageId(dto.getAnnoImageId());
+            annoDto.setStudyKey(studyKey);
+            annoDto.setSeriesKey(seriesKey);
+            annoDto.setImageKey(imageKey);
+            annoDto.setAnnotation(annotations);
+            annoDto.setCreatedBy(userId);
+            annoDto.setCreatedAt(dto.getCreatedAt());               // 행의 created_at
+            studyCommentMapper.insertAnnoLog(annoDto);
+        }
     }
-
-
 }
