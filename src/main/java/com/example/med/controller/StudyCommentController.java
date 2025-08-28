@@ -1,6 +1,7 @@
 package com.example.med.controller;
 
-import com.example.med.dto.CommentUpdateDto;
+import com.example.med.dto.logDto.CommentDeleteLogDto;
+import com.example.med.dto.logDto.CommentUpdateLogDto;
 import com.example.med.dto.StudyCommentDto;
 import com.example.med.service.StudyCommentService;
 import lombok.RequiredArgsConstructor;
@@ -42,18 +43,18 @@ public class StudyCommentController {
     public ResponseEntity<StudyCommentDto> updateStudyComment(
             @PathVariable long studyKey,
             @PathVariable long commentId,
-            @RequestBody CommentUpdateDto commentUpdateDto,
+            @RequestBody CommentUpdateLogDto commentUpdateLogDto,
             @AuthenticationPrincipal String userId
     ) {
-        commentUpdateDto.setUserId(userId);
-        commentUpdateDto.setCommentId(commentId);
-        commentUpdateDto.setStudyKey(studyKey);
+        commentUpdateLogDto.setUserId(userId);
+        commentUpdateLogDto.setCommentId(commentId);
+        commentUpdateLogDto.setStudyKey(studyKey);
 
-        StudyCommentDto updateDto = commentUpdateDto.toStudyCommentDto(commentId, studyKey, userId);
-        StudyCommentDto updatedComment = studyCommentService.updateComment(commentId, userId, updateDto, commentUpdateDto);
+        StudyCommentDto updateDto = commentUpdateLogDto.toStudyCommentDto(commentId, studyKey, userId);
+        StudyCommentDto updatedComment = studyCommentService.updateComment(commentId, userId, updateDto, commentUpdateLogDto);
 
         log.info("로그1" + updateDto.toString());
-        log.info("로그2" + commentUpdateDto.toString());
+        log.info("로그2" + commentUpdateLogDto.toString());
         return ResponseEntity.ok(updatedComment);
     }
 
@@ -61,9 +62,17 @@ public class StudyCommentController {
     public ResponseEntity<Void> deleteStudyComment(
             @PathVariable long studyKey,
             @PathVariable long commentId,
+            @RequestBody CommentDeleteLogDto commentDeleteLogDto,
             @AuthenticationPrincipal String userId
     ) {
-        studyCommentService.deleteComment(commentId, userId);
+        log.info("딜리트" +  commentId + " " + studyKey);
+
+
+        commentDeleteLogDto.setUserId(userId);
+        commentDeleteLogDto.setCommentId(commentId);
+        commentDeleteLogDto.setStudyKey(studyKey);
+
+        studyCommentService.deleteComment(commentId, userId, commentDeleteLogDto);
         return ResponseEntity.ok().build();
     }
 }

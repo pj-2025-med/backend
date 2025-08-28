@@ -1,11 +1,10 @@
-package com.example.med.dto;
+package com.example.med.dto.logDto;
 
+import com.example.med.dto.StudyCommentDto;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Data
-public class CommentUpdateDto {
+public class CommentUpdateLogDto {
     //url
     private Long commentId;
     //url
