@@ -30,4 +30,7 @@ List<LogShowDto> showAllLogs(@Param("page") Integer page,
     int insertAnnoUpdateLog(AnnoUpdateDto annoUpdateDto);
 
     int insertViewLog(ViewLogDto viewLogDto);
+
+    List<LogShowDto> showViewLogs(@Param("page") Integer page,
+                                 @Param("size") Integer size);
 }

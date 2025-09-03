@@ -224,4 +224,11 @@ public class StudyCommentService {
         int s = (size == null || size < 1) ? 20 : Math.min(size, 100); // 안전 상한
         return studyCommentMapper.showAllLogs(p, s);
     }
+
+    @Transactional
+    public List<LogShowDto> getViewLogs(Integer page, Integer size) {
+        int p = (page == null || page < 1) ? 1 : page;
+        int s = (size == null || size < 1) ? 20 : Math.min(size, 100); // 안전 상한
+        return studyCommentMapper.showViewLogs(p, s);
+    }
 }

@@ -239,4 +239,29 @@
     </insert>
 
 
+    <select id="showViewLogs"
+            parameterType="map"
+            resultType="com.example.med.dto.logDto.LogShowDto">
+        <![CDATA[
+    SELECT
+      LOG_ID           AS logId,
+      STUDY_KEY        AS studyKey,
+      USER_ID          AS userId,
+      COMMENT_ID       AS commentId,
+      COMMENT_TYPE     AS commentType,
+      ORIGINAL_TITLE   AS originalTitle,
+      ORIGINAL_CONTENT AS originalContent,
+      NEW_TITLE        AS newTitle,
+      NEW_CONTENT      AS newContent,
+      ACTION_TYPE      AS actionType,
+      CREATED_AT       AS createdAt,
+      UPDATED_AT       AS updatedAt
+    FROM STUDY_COMMENT_LOG
+    WHERE ACTION_TYPE = 'R'
+    ORDER BY LOG_ID DESC
+    OFFSET ((NVL(#{page, jdbcType=INTEGER}, 1) - 1) * NVL(#{size, jdbcType=INTEGER}, 20)) ROWS
+    FETCH NEXT NVL(#{size, jdbcType=INTEGER}, 20) ROWS ONLY
+  ]]>
+    </select>
+
 </mapper>
