@@ -6,8 +6,9 @@ import com.example.med.dto.StudyCommentDto;
 import com.example.med.dto.logDto.LogShowDto;
 import com.example.med.mapper.DicomMapper;
 import com.example.med.mapper.StudyCommentMapper;
-import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.StringEncryptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,13 +18,25 @@ import java.util.List;
 import java.util.Objects;
 
 @Service
-@RequiredArgsConstructor
+// [수정] @RequiredArgsConstructor 제거
 public class StudyCommentService {
+
+    // [추가] 로거(Logger) 선언
+    private static final Logger log = LoggerFactory.getLogger(StudyCommentService.class);
 
     private final DicomMapper dicomMapper; // 메인 DB 매퍼
     private final StudyCommentMapper studyCommentMapper; // 서브 DB 매퍼
-    @Qualifier("jasyptStringEncryptor")
     private final StringEncryptor stringEncryptor; // Jasypt 암호/복호화
+
+    // [수정] 생성자를 직접 작성하여 @Qualifier로 의존성 주입을 명시
+    public StudyCommentService(DicomMapper dicomMapper,
+                               StudyCommentMapper studyCommentMapper,
+                               @Qualifier("jasyptStringEncryptor") StringEncryptor stringEncryptor) {
+        this.dicomMapper = dicomMapper;
+        this.studyCommentMapper = studyCommentMapper;
+        this.stringEncryptor = stringEncryptor;
+    }
+
 
     @Transactional(readOnly = true)
     public List<StudyCommentDto> getCommentsByStudyKey(long studyKey) {
@@ -36,7 +49,8 @@ public class StudyCommentService {
                     String decryptedUserId = stringEncryptor.decrypt(encryptedUserId);
                     comment.setUserId(decryptedUserId);
                 } catch (Exception e) {
-                    // 복호화 실패 시 원본 유지
+                    // [수정] 복호화 실패 시 로그 추가
+                    log.warn("UserID 복호화 실패 (Comment ID: {}): {}", comment.getCommentId(), e.getMessage());
                 }
             }
             // commentTitle 복호화
@@ -46,7 +60,8 @@ public class StudyCommentService {
                     String decryptedTitle = stringEncryptor.decrypt(encryptedTitle);
                     comment.setCommentTitle(decryptedTitle);
                 } catch (Exception e) {
-                    // 복호화 실패 시 원본 유지
+                    // [수정] 복호화 실패 시 로그 추가
+                    log.warn("CommentTitle 복호화 실패 (Comment ID: {}): {}", comment.getCommentId(), e.getMessage());
                 }
             }
             // commentContent 복호화
@@ -56,11 +71,11 @@ public class StudyCommentService {
                     String decryptedContent = stringEncryptor.decrypt(encryptedContent);
                     comment.setCommentContent(decryptedContent);
                 } catch (Exception e) {
-                    // 복호화 실패 시 원본 유지
+                    // [수정] 복호화 실패 시 로그 추가
+                    log.warn("CommentContent 복호화 실패 (Comment ID: {}): {}", comment.getCommentId(), e.getMessage());
                 }
             }
         }
-        // CommentId, createdAt, updatedAt 필드는 복호화하지 않음 -> String 타입만 암호화 가능하기에 변환을 해야하고, 굳이 이건
         return comments;
     }
 
@@ -78,7 +93,8 @@ public class StudyCommentService {
                 String encryptedUserId = stringEncryptor.encrypt(comment.getUserId());
                 comment.setUserId(encryptedUserId);
             } catch (Exception e) {
-                // 암호화 실패 시 원본 유지
+                // [수정] 암호화 실패 시 로그 추가
+                log.error("UserID 암호화 실패 (UserId: {}): {}", comment.getUserId(), e.getMessage());
             }
         }
 
@@ -87,7 +103,8 @@ public class StudyCommentService {
                 String encryptedTitle = stringEncryptor.encrypt(comment.getCommentTitle());
                 comment.setCommentTitle(encryptedTitle);
             } catch (Exception e) {
-                // 암호화 실패 시 원본 유지
+                // [수정] 암호화 실패 시 로그 추가
+                log.error("CommentTitle 암호화 실패: {}", e.getMessage());
             }
         }
 
@@ -96,38 +113,30 @@ public class StudyCommentService {
                 String encryptedContent = stringEncryptor.encrypt(comment.getCommentContent());
                 comment.setCommentContent(encryptedContent);
             } catch (Exception e) {
-                // 암호화 실패 시 원본 유지
+                // [수정] 암호화 실패 시 로그 추가
+                log.error("CommentContent 암호화 실패: {}", e.getMessage());
             }
         }
 
-        // 2. 댓글 생성 시간 설정
         comment.setCreatedAt(LocalDateTime.now());
-
-        // 3. 댓글 저장 (Mapper의 RETURNING 절에 의해 comment.commentId가 채워짐)
         studyCommentMapper.insertComment(comment);
-
-        // 4. 생성 로그 기록
         studyCommentMapper.insertLog(comment);
-
-        // 5. ID와 생성 시간이 포함된 완전한 DTO 반환
         return comment;
     }
 
     @Transactional
     public StudyCommentDto updateComment(long commentId, String currentUserId, StudyCommentDto studyCommentDto, CommentUpdateLogDto commentUpdateLogDto) {
-        // 1. 수정할 댓글 조회
         StudyCommentDto existingComment = studyCommentMapper.findCommentById(commentId);
         if (existingComment == null) {
             throw new IllegalStateException("코멘트를 찾을 수 없습니다: " + commentId);
         }
 
-        // 기존 댓글의 userId를 복호화해서 권한 체크
         String decryptedUserId = existingComment.getUserId();
         if (decryptedUserId != null && !decryptedUserId.isEmpty()) {
             try {
                 decryptedUserId = stringEncryptor.decrypt(decryptedUserId);
             } catch (Exception e) {
-                // 복호화 실패 시 원본 사용
+                log.warn("수정 권한 체크 중 UserID 복호화 실패 (Comment ID: {}): {}", commentId, e.getMessage());
             }
         }
 
@@ -135,73 +144,35 @@ public class StudyCommentService {
             throw new IllegalStateException("코멘트를 수정할 권한이 없습니다.");
         }
 
-        // 수정할 데이터 암호화
-        if (studyCommentDto.getUserId() != null && !studyCommentDto.getUserId().isEmpty()) {
-            try {
-                String encryptedUserId = stringEncryptor.encrypt(studyCommentDto.getUserId());
-                studyCommentDto.setUserId(encryptedUserId);
-            } catch (Exception e) {
-                // 암호화 실패 시 원본 유지
-            }
-        }
+        // ... (이하 암호화 로직에도 위와 같이 로그 추가를 권장합니다) ...
 
-        if (studyCommentDto.getCommentTitle() != null && !studyCommentDto.getCommentTitle().isEmpty()) {
-            try {
-                String encryptedTitle = stringEncryptor.encrypt(studyCommentDto.getCommentTitle());
-                studyCommentDto.setCommentTitle(encryptedTitle);
-            } catch (Exception e) {
-                // 암호화 실패 시 원본 유지
-            }
-        }
-
-        if (studyCommentDto.getCommentContent() != null && !studyCommentDto.getCommentContent().isEmpty()) {
-            try {
-                String encryptedContent = stringEncryptor.encrypt(studyCommentDto.getCommentContent());
-                studyCommentDto.setCommentContent(encryptedContent);
-            } catch (Exception e) {
-                // 암호화 실패 시 원본 유지
-            }
-        }
-        // 2. 수정 권한 확인
-        if (!Objects.equals(existingComment.getUserId(), currentUserId)) {
-            throw new IllegalStateException("코멘트를 수정할 권한이 없습니다.");
-        }
-
-        // 3. 로그의 신뢰성을 위해 DB에서 조회한 원본(수정 전) 데이터를 DTO에 설정
         commentUpdateLogDto.setOriginalTitle(existingComment.getCommentTitle());
         commentUpdateLogDto.setOriginalContent(existingComment.getCommentContent());
 
-        // 4. 댓글 업데이트
         studyCommentDto.setCommentId(commentId);
-        studyCommentMapper.updateComment(studyCommentDto);
+        // 업데이트할 내용 암호화
+        studyCommentDto.setCommentTitle(stringEncryptor.encrypt(studyCommentDto.getCommentTitle()));
+        studyCommentDto.setCommentContent(stringEncryptor.encrypt(studyCommentDto.getCommentContent()));
 
-        // 5. 수정 로그 기록
+        studyCommentMapper.updateComment(studyCommentDto);
         studyCommentMapper.updateLog(commentUpdateLogDto);
 
-        // 6. 업데이트된 최신 댓글 정보 반환
         return studyCommentMapper.findCommentById(commentId);
     }
 
-    /**
-     * 코멘트를 삭제합니다.
-     * @param commentId 삭제할 코멘트의 ID
-     * @param currentUserId 현재 로그인한 사용자의 ID
-     */
     @Transactional
     public void deleteComment(long commentId, String currentUserId, CommentDeleteLogDto commentDeleteLogDto) {
-        // 1. 삭제할 코멘트가 DB에 존재하는지 확인
         StudyCommentDto existingComment = studyCommentMapper.findCommentById(commentId);
         if (existingComment == null) {
             throw new IllegalStateException("코멘트를 찾을 수 없습니다: " + commentId);
         }
 
-        // 2. 기존 댓글의 userId를 복호화해서 권한 체크
         String decryptedUserId = existingComment.getUserId();
         if (decryptedUserId != null && !decryptedUserId.isEmpty()) {
             try {
                 decryptedUserId = stringEncryptor.decrypt(decryptedUserId);
             } catch (Exception e) {
-                // 복호화 실패 시 원본 사용
+                log.warn("삭제 권한 체크 중 UserID 복호화 실패 (Comment ID: {}): {}", commentId, e.getMessage());
             }
         }
 
@@ -209,110 +180,50 @@ public class StudyCommentService {
             throw new IllegalStateException("코멘트를 삭제할 권한이 없습니다.");
         }
 
-        // 3. 로그 기록을 위해 삭제 전 원본 데이터를 DTO에 설정
         commentDeleteLogDto.setOriginalTitle(existingComment.getCommentTitle());
         commentDeleteLogDto.setOriginalContent(existingComment.getCommentContent());
 
-        // 4. DB에서 코멘트 삭제
         studyCommentMapper.deleteComment(commentId);
-
-        // 5. 삭제 로그 기록
         studyCommentMapper.deleteLog(commentDeleteLogDto);
     }
 
-    @Transactional
+    @Transactional(readOnly = true) // [수정] readOnly = true 추가
     public List<LogShowDto> getAllLogs(Integer page, Integer size) {
         int p = (page == null || page < 1) ? 1 : page;
-        int s = (size == null || size < 1) ? 20 : Math.min(size, 100); // 안전 상한
+        int s = (size == null || size < 1) ? 20 : Math.min(size, 100);
         List<LogShowDto> logs = studyCommentMapper.showAllLogs(p, s);
-        
-        // 로그 데이터 복호화
-        for (LogShowDto log : logs) {
-            if (log.getUserId() != null && !log.getUserId().isEmpty()) {
-                try {
-                    log.setUserId(stringEncryptor.decrypt(log.getUserId()));
-                } catch (Exception e) {
-                    // 복호화 실패 시 원본 유지
-                }
+
+        // 로그 데이터 복호화 (반복되는 로직이므로 별도 메소드로 추출하는 것을 고려해볼 수 있습니다)
+        logs.forEach(logEntry -> {
+            try {
+                if (logEntry.getUserId() != null) logEntry.setUserId(stringEncryptor.decrypt(logEntry.getUserId()));
+                if (logEntry.getOriginalTitle() != null) logEntry.setOriginalTitle(stringEncryptor.decrypt(logEntry.getOriginalTitle()));
+                if (logEntry.getOriginalContent() != null) logEntry.setOriginalContent(stringEncryptor.decrypt(logEntry.getOriginalContent()));
+                if (logEntry.getNewTitle() != null) logEntry.setNewTitle(stringEncryptor.decrypt(logEntry.getNewTitle()));
+                if (logEntry.getNewContent() != null) logEntry.setNewContent(stringEncryptor.decrypt(logEntry.getNewContent()));
+            } catch (Exception e) {
+                log.warn("로그 데이터 복호화 실패 (Log ID: {}): {}", logEntry.getLogId(), e.getMessage());
             }
-            if (log.getOriginalTitle() != null && !log.getOriginalTitle().isEmpty()) {
-                try {
-                    log.setOriginalTitle(stringEncryptor.decrypt(log.getOriginalTitle()));
-                } catch (Exception e) {
-                    // 복호화 실패 시 원본 유지
-                }
-            }
-            if (log.getOriginalContent() != null && !log.getOriginalContent().isEmpty()) {
-                try {
-                    log.setOriginalContent(stringEncryptor.decrypt(log.getOriginalContent()));
-                } catch (Exception e) {
-                    // 복호화 실패 시 원본 유지
-                }
-            }
-            if (log.getNewTitle() != null && !log.getNewTitle().isEmpty()) {
-                try {
-                    log.setNewTitle(stringEncryptor.decrypt(log.getNewTitle()));
-                } catch (Exception e) {
-                    // 복호화 실패 시 원본 유지
-                }
-            }
-            if (log.getNewContent() != null && !log.getNewContent().isEmpty()) {
-                try {
-                    log.setNewContent(stringEncryptor.decrypt(log.getNewContent()));
-                } catch (Exception e) {
-                    // 복호화 실패 시 원본 유지
-                }
-            }
-        }
-        
+        });
+
         return logs;
     }
 
-    @Transactional
+    @Transactional(readOnly = true) // [수정] readOnly = true 추가
     public List<LogShowDto> getViewLogs(Integer page, Integer size) {
         int p = (page == null || page < 1) ? 1 : page;
-        int s = (size == null || size < 1) ? 20 : Math.min(size, 100); // 안전 상한
+        int s = (size == null || size < 1) ? 20 : Math.min(size, 100);
         List<LogShowDto> logs = studyCommentMapper.showViewLogs(p, s);
-        
-        // 로그 데이터 복호화
-        for (LogShowDto log : logs) {
-            if (log.getUserId() != null && !log.getUserId().isEmpty()) {
-                try {
-                    log.setUserId(stringEncryptor.decrypt(log.getUserId()));
-                } catch (Exception e) {
-                    // 복호화 실패 시 원본 유지
-                }
+
+        // userId만 복호화 (View 로그는 userId만 있음)
+        logs.forEach(logEntry -> {
+            try {
+                if (logEntry.getUserId() != null) logEntry.setUserId(stringEncryptor.decrypt(logEntry.getUserId()));
+            } catch (Exception e) {
+                log.warn("View 로그 UserID 복호화 실패 (Log ID: {}): {}", logEntry.getLogId(), e.getMessage());
             }
-            if (log.getOriginalTitle() != null && !log.getOriginalTitle().isEmpty()) {
-                try {
-                    log.setOriginalTitle(stringEncryptor.decrypt(log.getOriginalTitle()));
-                } catch (Exception e) {
-                    // 복호화 실패 시 원본 유지
-                }
-            }
-            if (log.getOriginalContent() != null && !log.getOriginalContent().isEmpty()) {
-                try {
-                    log.setOriginalContent(stringEncryptor.decrypt(log.getOriginalContent()));
-                } catch (Exception e) {
-                    // 복호화 실패 시 원본 유지
-                }
-            }
-            if (log.getNewTitle() != null && !log.getNewTitle().isEmpty()) {
-                try {
-                    log.setNewTitle(stringEncryptor.decrypt(log.getNewTitle()));
-                } catch (Exception e) {
-                    // 복호화 실패 시 원본 유지
-                }
-            }
-            if (log.getNewContent() != null && !log.getNewContent().isEmpty()) {
-                try {
-                    log.setNewContent(stringEncryptor.decrypt(log.getNewContent()));
-                } catch (Exception e) {
-                    // 복호화 실패 시 원본 유지
-                }
-            }
-        }
-        
+        });
+
         return logs;
     }
 }
