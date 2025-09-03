@@ -5,6 +5,8 @@ import com.example.med.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -33,12 +35,15 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                .cors(Customizer.withDefaults()) // 전역 CORS 설정을 사용하도록 명시
                 .httpBasic(httpBasic -> httpBasic.disable()) // http basic auth 비활성화
                 .csrf(csrf -> csrf.disable()) // csrf 비활성화
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 세션 STATELESS 설정
                 )
                 .authorizeHttpRequests(authorize -> authorize
+                        // -- CORS Preflight 요청은 항상 허용
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 // -- Swagger UI & API Docs
                                 "/swagger-ui/**",
