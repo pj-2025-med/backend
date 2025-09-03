@@ -28,4 +28,14 @@ public class LogViewController {
         List<LogShowDto> allLogs = studyCommentService.getAllLogs(page, size);
         return ResponseEntity.ok(allLogs);
     }
+
+    @GetMapping("/showViewLog")
+    public ResponseEntity<List<LogShowDto>> showViewLogs(
+            @AuthenticationPrincipal String userId,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "20") Integer size
+    ) {
+        List<LogShowDto> allLogs = studyCommentService.getViewLogs(page, size);
+        return ResponseEntity.ok(allLogs);
+    }
 }
