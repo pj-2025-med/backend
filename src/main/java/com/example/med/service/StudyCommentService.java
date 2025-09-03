@@ -8,6 +8,7 @@ import com.example.med.mapper.DicomMapper;
 import com.example.med.mapper.StudyCommentMapper;
 import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.StringEncryptor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ public class StudyCommentService {
 
     private final DicomMapper dicomMapper; // 메인 DB 매퍼
     private final StudyCommentMapper studyCommentMapper; // 서브 DB 매퍼
+    @Qualifier("jasyptStringEncryptor")
     private final StringEncryptor stringEncryptor; // Jasypt 암호/복호화
 
     @Transactional(readOnly = true)
@@ -222,13 +224,95 @@ public class StudyCommentService {
     public List<LogShowDto> getAllLogs(Integer page, Integer size) {
         int p = (page == null || page < 1) ? 1 : page;
         int s = (size == null || size < 1) ? 20 : Math.min(size, 100); // 안전 상한
-        return studyCommentMapper.showAllLogs(p, s);
+        List<LogShowDto> logs = studyCommentMapper.showAllLogs(p, s);
+        
+        // 로그 데이터 복호화
+        for (LogShowDto log : logs) {
+            if (log.getUserId() != null && !log.getUserId().isEmpty()) {
+                try {
+                    log.setUserId(stringEncryptor.decrypt(log.getUserId()));
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+            if (log.getOriginalTitle() != null && !log.getOriginalTitle().isEmpty()) {
+                try {
+                    log.setOriginalTitle(stringEncryptor.decrypt(log.getOriginalTitle()));
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+            if (log.getOriginalContent() != null && !log.getOriginalContent().isEmpty()) {
+                try {
+                    log.setOriginalContent(stringEncryptor.decrypt(log.getOriginalContent()));
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+            if (log.getNewTitle() != null && !log.getNewTitle().isEmpty()) {
+                try {
+                    log.setNewTitle(stringEncryptor.decrypt(log.getNewTitle()));
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+            if (log.getNewContent() != null && !log.getNewContent().isEmpty()) {
+                try {
+                    log.setNewContent(stringEncryptor.decrypt(log.getNewContent()));
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+        }
+        
+        return logs;
     }
 
     @Transactional
     public List<LogShowDto> getViewLogs(Integer page, Integer size) {
         int p = (page == null || page < 1) ? 1 : page;
         int s = (size == null || size < 1) ? 20 : Math.min(size, 100); // 안전 상한
-        return studyCommentMapper.showViewLogs(p, s);
+        List<LogShowDto> logs = studyCommentMapper.showViewLogs(p, s);
+        
+        // 로그 데이터 복호화
+        for (LogShowDto log : logs) {
+            if (log.getUserId() != null && !log.getUserId().isEmpty()) {
+                try {
+                    log.setUserId(stringEncryptor.decrypt(log.getUserId()));
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+            if (log.getOriginalTitle() != null && !log.getOriginalTitle().isEmpty()) {
+                try {
+                    log.setOriginalTitle(stringEncryptor.decrypt(log.getOriginalTitle()));
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+            if (log.getOriginalContent() != null && !log.getOriginalContent().isEmpty()) {
+                try {
+                    log.setOriginalContent(stringEncryptor.decrypt(log.getOriginalContent()));
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+            if (log.getNewTitle() != null && !log.getNewTitle().isEmpty()) {
+                try {
+                    log.setNewTitle(stringEncryptor.decrypt(log.getNewTitle()));
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+            if (log.getNewContent() != null && !log.getNewContent().isEmpty()) {
+                try {
+                    log.setNewContent(stringEncryptor.decrypt(log.getNewContent()));
+                } catch (Exception e) {
+                    // 복호화 실패 시 원본 유지
+                }
+            }
+        }
+        
+        return logs;
     }
 }
