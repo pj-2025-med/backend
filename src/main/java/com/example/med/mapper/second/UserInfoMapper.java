@@ -1,8 +1,11 @@
 package com.example.med.mapper.second;
 
+import com.example.med.dto.UserDto;
 import com.example.med.dto.UserInfo;
 import com.example.med.dto.UserInfoRespondDto;
 import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
 
 public interface UserInfoMapper {
     UserInfo findById(@Param("userId") String userId);
@@ -17,4 +20,6 @@ public interface UserInfoMapper {
     // 사용자 정보 표시를 위한 메서드
     UserInfoRespondDto findByUserInfo(@Param("userId") String userId);
 
+    List<UserDto> findAll();
+    int deleteUser(@Param("userId") String userId);
 }
