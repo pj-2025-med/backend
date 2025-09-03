@@ -5,7 +5,6 @@ import com.example.med.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile; // Profile 임포트
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -27,37 +26,15 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(){
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter(jwtTokenProvider);
     }
 
-    /**
-     * 개발 환경용 SecurityFilterChain (dev 프로필 활성화 시 사용)
-     * 모든 요청을 허용하여 개발 및 테스트를 쉽게 합니다.
-     */
     @Bean
-    @Profile("dev")
-    public SecurityFilterChain devSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/**").permitAll() // 모든 경로 허용
-                );
-        return http.build();
-    }
-
-    /**
-     * 운영 환경용 SecurityFilterChain (dev 프로필이 아닐 때 사용)
-     * API 접근에 인증이 필요한 기본 보안 설정을 유지합니다.
-     */
-    @Bean
-    @Profile("!dev")
-    public SecurityFilterChain prodSecurityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
+                .httpBasic(httpBasic -> httpBasic.disable()) // http basic auth 비활성화
+                .csrf(csrf -> csrf.disable()) // csrf 비활성화
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 세션 STATELESS 설정
                 )
@@ -73,10 +50,13 @@ public class SecurityConfig {
                                 "/db/ping/**",
 
                                 // -- 회원가입/로그인 등 공개 API
-                                "/api/users/signup",
-                                "/api/users/login"
+                                "/api/register",
+                                "/api/login"
                         ).permitAll()
-                        .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
+                        // -- 로그 조회 API는 ADMIN 역할만 접근 가능
+                        .requestMatchers("/api/v1/logs/**").hasRole("ADMIN")
+                        // -- 그 외 모든 요청은 인증 필요
+                        .anyRequest().authenticated()
                 )
                 // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 추가
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
