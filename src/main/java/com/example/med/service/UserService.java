@@ -8,6 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 
 @Slf4j
 @Service
@@ -106,6 +108,18 @@ public class UserService {
 
     public UserInfoRespondDto getUserById(String userId){
         return userInfoMapper.findByUserInfo(userId);
+    }
+
+
+    public List<UserDto> findAll() {
+        return userInfoMapper.findAll();
+    }
+
+    public void delete(String userId) {
+        int deleted = userInfoMapper.deleteUser(userId);
+        if (deleted == 0) {
+            throw new IllegalArgumentException("존재하지 않는 사용자: " + userId);
+        }
     }
 
 }

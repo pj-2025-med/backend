@@ -9,12 +9,14 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -68,6 +70,7 @@ public class UserController {
             return ResponseEntity.status(500).body("로그인 처리 중 오류 발생: " + e.getMessage());
         }
     }
+
     @Operation(summary = "로그아웃", description = "JWT 쿠키를 삭제하여 로그아웃을 처리합니다.")
     @PostMapping("/logout")
     public ResponseEntity<?> logout(){
@@ -146,6 +149,16 @@ public class UserController {
             ));
         }
     }
+    @GetMapping("/showAll")
+    public ResponseEntity<List<UserDto>> showAll() {
+        return ResponseEntity.ok(userService.findAll());
+    }
 
+    // DELETE /api/userInfo/delete/{userId}
+    @DeleteMapping("/delete/{userId}")
+    public ResponseEntity<Void> delete(@PathVariable String userId) {
+        userService.delete(userId);
+        return ResponseEntity.noContent().build();
+    }
 
 }

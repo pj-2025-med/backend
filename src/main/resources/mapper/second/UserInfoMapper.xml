@@ -49,4 +49,33 @@
         SELECT COUNT(*) FROM USER_INFO WHERE email = #{email}
     </select>
 
+    <resultMap id="UserResultMap" type="com.example.med.dto.UserDto">
+        <id     property="userId"      column="USER_ID"/>
+        <result property="userName"    column="USER_NAME"/>
+        <result property="email"       column="EMAIL"/>
+        <result property="createdAt"   column="CREATED_AT"/>
+        <result property="updatedAt"   column="UPDATED_AT"/>
+        <result property="createdYear" column="CREATED_YEAR"/>
+    </resultMap>
+
+    <!-- 전체 조회: 생성년도도 함께 반환 -->
+    <select id="findAll" resultMap="UserResultMap">
+        SELECT
+            USER_ID,
+            USER_NAME,
+            EMAIL,
+            CREATED_AT,
+            UPDATED_AT,
+            EXTRACT(YEAR FROM CREATED_AT) AS CREATED_YEAR
+        FROM USER_INFO
+        ORDER BY CREATED_AT DESC
+    </select>
+
+    <!-- 삭제 -->
+    <delete id="deleteUser">
+        DELETE FROM USER_INFO WHERE USER_ID = #{userId}
+    </delete>
+
+
+
 </mapper>
