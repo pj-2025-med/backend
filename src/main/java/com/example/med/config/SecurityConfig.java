@@ -61,6 +61,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET,  "/api/v1/dicom/studies/*/series/*/images/*").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/api/v1/dicom/studies/*/series/*/images/*").permitAll()
                         // -- 로그 조회 API는 ADMIN 역할만 접근 가능
+                        .requestMatchers(HttpMethod.GET,  "/api/v1/dicom/studies/*/series/*/images/*").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/api/v1/dicom/studies/*/series/*/images/*").permitAll()
                         .requestMatchers("/api/v1/logs/**").hasRole("ADMIN")
                         // -- 그 외 모든 요청은 인증 필요
                         .anyRequest().authenticated()
