@@ -58,6 +58,8 @@ public class SecurityConfig {
                                 "/api/register",
                                 "/api/login"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/v1/dicom/studies/*/series/*/images/*").permitAll()
+                        .requestMatchers(HttpMethod.HEAD, "/api/v1/dicom/studies/*/series/*/images/*").permitAll()
                         // -- 로그 조회 API는 ADMIN 역할만 접근 가능
                         .requestMatchers(HttpMethod.GET,  "/api/v1/dicom/studies/*/series/*/images/*").permitAll()
                         .requestMatchers(HttpMethod.HEAD, "/api/v1/dicom/studies/*/series/*/images/*").permitAll()
