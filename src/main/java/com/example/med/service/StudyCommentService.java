@@ -26,7 +26,7 @@ public class StudyCommentService {
     private final StudyCommentMapper studyCommentMapper; // 서브 DB 매퍼
     private final StringEncryptor stringEncryptor; // Jasypt 암호/복호화
 
-    // [수정] 생성자를 직접 작성하여 @Qualifier로 의존성 주입을 명시
+    // 생성자를 직접 작성하여 @Qualifier로 의존성 주입을 명시
     public StudyCommentService(DicomMapper dicomMapper,
                                StudyCommentMapper studyCommentMapper,
                                @Qualifier("jasyptStringEncryptor") StringEncryptor stringEncryptor) {
@@ -36,7 +36,7 @@ public class StudyCommentService {
     }
 
     private boolean isEncrypted(String value) {
-        // Jasypt 암호화 문자열은 보통 base64, 길이 등으로 구분 가능
+        // 평문타입이라서 정규식 사용
         return value != null && value.matches("^[A-Za-z0-9+/=]{16,}$");
     }
 
@@ -44,14 +44,12 @@ public class StudyCommentService {
     public List<StudyCommentDto> getCommentsByStudyKey(long studyKey) {
         List<StudyCommentDto> comments = studyCommentMapper.findCommentsByStudyKey(studyKey);
         for (StudyCommentDto comment : comments) {
-            // commentTitle 복호화
             String encryptedTitle = comment.getCommentTitle();
             if (encryptedTitle != null && !encryptedTitle.isEmpty()) {
                 try {
                     String decryptedTitle = stringEncryptor.decrypt(encryptedTitle);
                     comment.setCommentTitle(decryptedTitle);
                 } catch (Exception e) {
-                    // [수정] 복호화 실패 시 로그 추가
                     log.warn("CommentTitle 복호화 실패 (Comment ID: {}): {}", comment.getCommentId(), e.getMessage());
                 }
             }
@@ -62,7 +60,6 @@ public class StudyCommentService {
                     String decryptedContent = stringEncryptor.decrypt(encryptedContent);
                     comment.setCommentContent(decryptedContent);
                 } catch (Exception e) {
-                    // [수정] 복호화 실패 시 로그 추가
                     log.warn("CommentContent 복호화 실패 (Comment ID: {}): {}", comment.getCommentId(), e.getMessage());
                 }
             }
@@ -72,29 +69,17 @@ public class StudyCommentService {
 
     @Transactional
     public StudyCommentDto createComment(StudyCommentDto comment) {
-        // 1. studyKey 유효성 검증
+        // studyKey 유효성 검증
         List<Long> seriesKeys = dicomMapper.findSeriesKeys(comment.getStudyKey());
         if (seriesKeys == null || seriesKeys.isEmpty()) {
             throw new IllegalArgumentException("유효하지 않은 studyKey입니다: " + comment.getStudyKey());
         }
-
-        // userId, commentTitle, commentContent 암호화 후 DB 저장
-        /*if (comment.getUserId() != null && !comment.getUserId().isEmpty()) {
-            try {
-                String encryptedUserId = stringEncryptor.encrypt(comment.getUserId());
-                comment.setUserId(encryptedUserId);
-            } catch (Exception e) {
-                // [수정] 암호화 실패 시 로그 추가
-                log.error("UserID 암호화 실패 (UserId: {}): {}", comment.getUserId(), e.getMessage());
-            }
-        }*/
 
         if (comment.getCommentTitle() != null && !comment.getCommentTitle().isEmpty()) {
             try {
                 String encryptedTitle = stringEncryptor.encrypt(comment.getCommentTitle());
                 comment.setCommentTitle(encryptedTitle);
             } catch (Exception e) {
-                // [수정] 암호화 실패 시 로그 추가
                 log.error("CommentTitle 암호화 실패: {}", e.getMessage());
             }
         }
@@ -104,7 +89,6 @@ public class StudyCommentService {
                 String encryptedContent = stringEncryptor.encrypt(comment.getCommentContent());
                 comment.setCommentContent(encryptedContent);
             } catch (Exception e) {
-                // [수정] 암호화 실패 시 로그 추가
                 log.error("CommentContent 암호화 실패: {}", e.getMessage());
             }
         }
@@ -201,7 +185,6 @@ public class StudyCommentService {
         int s = (size == null || size < 1) ? 20 : Math.min(size, 100);
         List<LogShowDto> logs = studyCommentMapper.showAllLogs(p, s);
 
-        log.info("DB에서 가져온 DTO:{}",logs);
 
         logs.forEach(logEntry -> {
             try {
@@ -222,17 +205,7 @@ public class StudyCommentService {
     public List<LogShowDto> getViewLogs(Integer page, Integer size) {
         int p = (page == null || page < 1) ? 1 : page;
         int s = (size == null || size < 1) ? 20 : Math.min(size, 100);
-        List<LogShowDto> logs = studyCommentMapper.showViewLogs(p, s);
 
-        // userId만 복호화 (View 로그는 userId만 있음)
-        logs.forEach(logEntry -> {
-            try {
-                if (logEntry.getUserId() != null) logEntry.setUserId(stringEncryptor.decrypt(logEntry.getUserId()));
-            } catch (Exception e) {
-                log.warn("View 로그 UserID 복호화 실패 (Log ID: {}): {}", logEntry.getLogId(), e.getMessage());
-            }
-        });
-
-        return logs;
+        return studyCommentMapper.showViewLogs(p, s);
     }
 }
