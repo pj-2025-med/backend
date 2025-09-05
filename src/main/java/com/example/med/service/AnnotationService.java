@@ -32,7 +32,7 @@ public class AnnotationService {
 
     public List<AnnotationDto> getAnnotations(long studyKey, long seriesKey, long imageKey, Integer frameNo) {
         List<AnnotationDto> annotations = annotationMapper.findAnnotations(studyKey, seriesKey, imageKey, frameNo);
-        log.info("DB에서 가져온 원본 데이터:{}", annotations);
+        log.debug("DB에서 가져온 원본 데이터:{}", annotations);
         // 조회한 어노테이션 데이터 복호화
         for (AnnotationDto annotation : annotations) {
             if (annotation.getAnnotations() != null) {
