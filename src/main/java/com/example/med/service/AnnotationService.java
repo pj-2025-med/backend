@@ -39,7 +39,6 @@ public class AnnotationService {
                 annotation.setAnnotations(stringEncryptor.decrypt(annotation.getAnnotations()));
             }
         }
-        log.info("복호화된 데이터:{}", annotations);
 
         return annotations;
     }
