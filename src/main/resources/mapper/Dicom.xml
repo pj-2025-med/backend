@@ -94,7 +94,30 @@
         FROM "C##SAHMYOOK".PATIENTTAB p
         JOIN "C##SAHMYOOK".STUDYTAB s
         ON s.PID = p.PID
-        WHERE s.MODALITY = #{modality}
+        WHERE s.MODALITY LIKE #{modality} || '%'
+        ORDER BY p.PID, s.STUDYDATE DESC, s.STUDYTIME DESC
+    </select>
+
+    <select id="findPatientsWithStudiesByPatientID"
+            parameterType="string"
+            resultType="com.example.med.dto.PatientStudyFlatDto">
+        SELECT
+        p.PID          AS pid,
+        p.PNAME        AS pname,
+        p.PSEX         AS psex,
+        p.PBIRTHDATE   AS pbirthdate,
+        s.STUDYKEY     AS studyKey,
+        s.STUDYDATE    AS studyDate,
+        s.STUDYTIME    AS studyTime,
+        s.STUDYDESC    AS studyDesc,
+        s.MODALITY     AS modality,
+        s.BODYPART     AS bodyPart,
+        s.PATAGE       AS patAge
+        FROM "C##SAHMYOOK".PATIENTTAB p
+        JOIN "C##SAHMYOOK".STUDYTAB s
+        ON s.PID = p.PID
+
+        WHERE p.PID LIKE #{patientID} || '%'
         ORDER BY p.PID, s.STUDYDATE DESC, s.STUDYTIME DESC
     </select>
 
