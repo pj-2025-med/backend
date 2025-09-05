@@ -18,10 +18,8 @@ import java.util.List;
 import java.util.Objects;
 
 @Service
-// [수정] @RequiredArgsConstructor 제거
 public class StudyCommentService {
 
-    // [추가] 로거(Logger) 선언
     private static final Logger log = LoggerFactory.getLogger(StudyCommentService.class);
 
     private final DicomMapper dicomMapper; // 메인 DB 매퍼
@@ -37,22 +35,15 @@ public class StudyCommentService {
         this.stringEncryptor = stringEncryptor;
     }
 
+    private boolean isEncrypted(String value) {
+        // Jasypt 암호화 문자열은 보통 base64, 길이 등으로 구분 가능
+        return value != null && value.matches("^[A-Za-z0-9+/=]{16,}$");
+    }
 
     @Transactional(readOnly = true)
     public List<StudyCommentDto> getCommentsByStudyKey(long studyKey) {
         List<StudyCommentDto> comments = studyCommentMapper.findCommentsByStudyKey(studyKey);
         for (StudyCommentDto comment : comments) {
-            // userId 복호화
-            String encryptedUserId = comment.getUserId();
-            if (encryptedUserId != null && !encryptedUserId.isEmpty()) {
-                try {
-                    String decryptedUserId = stringEncryptor.decrypt(encryptedUserId);
-                    comment.setUserId(decryptedUserId);
-                } catch (Exception e) {
-                    // [수정] 복호화 실패 시 로그 추가
-                    log.warn("UserID 복호화 실패 (Comment ID: {}): {}", comment.getCommentId(), e.getMessage());
-                }
-            }
             // commentTitle 복호화
             String encryptedTitle = comment.getCommentTitle();
             if (encryptedTitle != null && !encryptedTitle.isEmpty()) {
@@ -88,7 +79,7 @@ public class StudyCommentService {
         }
 
         // userId, commentTitle, commentContent 암호화 후 DB 저장
-        if (comment.getUserId() != null && !comment.getUserId().isEmpty()) {
+        /*if (comment.getUserId() != null && !comment.getUserId().isEmpty()) {
             try {
                 String encryptedUserId = stringEncryptor.encrypt(comment.getUserId());
                 comment.setUserId(encryptedUserId);
@@ -96,7 +87,7 @@ public class StudyCommentService {
                 // [수정] 암호화 실패 시 로그 추가
                 log.error("UserID 암호화 실패 (UserId: {}): {}", comment.getUserId(), e.getMessage());
             }
-        }
+        }*/
 
         if (comment.getCommentTitle() != null && !comment.getCommentTitle().isEmpty()) {
             try {
@@ -144,10 +135,27 @@ public class StudyCommentService {
             throw new IllegalStateException("코멘트를 수정할 권한이 없습니다.");
         }
 
-        // ... (이하 암호화 로직에도 위와 같이 로그 추가를 권장합니다) ...
-
         commentUpdateLogDto.setOriginalTitle(existingComment.getCommentTitle());
         commentUpdateLogDto.setOriginalContent(existingComment.getCommentContent());
+
+
+        if (commentUpdateLogDto.getCommentTitle() != null && !commentUpdateLogDto.getCommentTitle().isEmpty()) {
+            try {
+                String encryptedNewTitle = stringEncryptor.encrypt(commentUpdateLogDto.getCommentTitle());
+                commentUpdateLogDto.setCommentTitle(encryptedNewTitle);
+            } catch (Exception e) {
+                log.error("로그용 CommentTitle 암호화 실패: {}", e.getMessage());
+            }
+        }
+
+        if (commentUpdateLogDto.getCommentContent() != null && !commentUpdateLogDto.getCommentContent().isEmpty()) {
+            try {
+                String encryptedNewContent = stringEncryptor.encrypt(commentUpdateLogDto.getCommentContent());
+                commentUpdateLogDto.setCommentContent(encryptedNewContent);
+            } catch (Exception e) {
+                log.error("로그용 CommentContent 암호화 실패: {}", e.getMessage());
+            }
+        }
 
         studyCommentDto.setCommentId(commentId);
         // 업데이트할 내용 암호화
@@ -187,20 +195,21 @@ public class StudyCommentService {
         studyCommentMapper.deleteLog(commentDeleteLogDto);
     }
 
-    @Transactional(readOnly = true) // [수정] readOnly = true 추가
+    @Transactional(readOnly = true)
     public List<LogShowDto> getAllLogs(Integer page, Integer size) {
         int p = (page == null || page < 1) ? 1 : page;
         int s = (size == null || size < 1) ? 20 : Math.min(size, 100);
         List<LogShowDto> logs = studyCommentMapper.showAllLogs(p, s);
 
-        // 로그 데이터 복호화 (반복되는 로직이므로 별도 메소드로 추출하는 것을 고려해볼 수 있습니다)
+        log.info("DB에서 가져온 DTO:{}",logs);
+
         logs.forEach(logEntry -> {
             try {
-                if (logEntry.getUserId() != null) logEntry.setUserId(stringEncryptor.decrypt(logEntry.getUserId()));
-                if (logEntry.getOriginalTitle() != null) logEntry.setOriginalTitle(stringEncryptor.decrypt(logEntry.getOriginalTitle()));
-                if (logEntry.getOriginalContent() != null) logEntry.setOriginalContent(stringEncryptor.decrypt(logEntry.getOriginalContent()));
-                if (logEntry.getNewTitle() != null) logEntry.setNewTitle(stringEncryptor.decrypt(logEntry.getNewTitle()));
-                if (logEntry.getNewContent() != null) logEntry.setNewContent(stringEncryptor.decrypt(logEntry.getNewContent()));
+                if (logEntry.getUserId() != null && isEncrypted(logEntry.getUserId())) logEntry.setUserId(stringEncryptor.decrypt(logEntry.getUserId()));
+                if (logEntry.getOriginalTitle() != null && isEncrypted(logEntry.getOriginalTitle())) logEntry.setOriginalTitle(stringEncryptor.decrypt(logEntry.getOriginalTitle()));
+                if (logEntry.getOriginalContent() != null && isEncrypted(logEntry.getOriginalContent())) logEntry.setOriginalContent(stringEncryptor.decrypt(logEntry.getOriginalContent()));
+                if (logEntry.getNewTitle() != null && isEncrypted(logEntry.getNewTitle())) logEntry.setNewTitle(stringEncryptor.decrypt(logEntry.getNewTitle()));
+                if (logEntry.getNewContent() != null && isEncrypted(logEntry.getNewContent())) logEntry.setNewContent(stringEncryptor.decrypt(logEntry.getNewContent()));
             } catch (Exception e) {
                 log.warn("로그 데이터 복호화 실패 (Log ID: {}): {}", logEntry.getLogId(), e.getMessage());
             }
@@ -209,7 +218,7 @@ public class StudyCommentService {
         return logs;
     }
 
-    @Transactional(readOnly = true) // [수정] readOnly = true 추가
+    @Transactional(readOnly = true)
     public List<LogShowDto> getViewLogs(Integer page, Integer size) {
         int p = (page == null || page < 1) ? 1 : page;
         int s = (size == null || size < 1) ? 20 : Math.min(size, 100);
