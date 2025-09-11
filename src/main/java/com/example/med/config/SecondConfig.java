@@ -1,5 +1,6 @@
 package com.example.med.config;
 
+import com.example.med.mapper.ChatMapper;
 import com.example.med.mapper.StudyCommentMapper;
 import com.example.med.mapper.second.AnnotationMapper;
 import com.example.med.mapper.second.UserInfoMapper;
@@ -66,6 +67,14 @@ public class SecondConfig {
     @Bean
     public MapperFactoryBean<AnnotationMapper> annotationMapper(@Qualifier("secondSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
         MapperFactoryBean<AnnotationMapper> factoryBean = new MapperFactoryBean<>(AnnotationMapper.class);
+        factoryBean.setSqlSessionFactory(sqlSessionFactory);
+        return factoryBean;
+    }
+
+    // ChatMapper를 위한 MapperFactoryBean을 수동으로 등록합니다.
+    @Bean
+    public MapperFactoryBean<ChatMapper> chatMapper(@Qualifier("secondSqlSessionFactory") SqlSessionFactory sqlSessionFactory) {
+        MapperFactoryBean<ChatMapper> factoryBean = new MapperFactoryBean<>(ChatMapper.class);
         factoryBean.setSqlSessionFactory(sqlSessionFactory);
         return factoryBean;
     }

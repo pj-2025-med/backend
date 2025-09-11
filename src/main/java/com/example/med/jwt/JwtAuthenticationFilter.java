@@ -25,7 +25,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (request.getCookies() == null) {
             return null;
         }
-        return Arrays.stream(request.getCookies()).filter(cookie -> "jwt_token".equals(cookie.getName())).map(Cookie::getValue).findFirst().orElse(null);
+
+        // 일반 for문 방식으로 변경
+        for (Cookie cookie : request.getCookies()) {
+            if ("jwt_token".equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     @Override
