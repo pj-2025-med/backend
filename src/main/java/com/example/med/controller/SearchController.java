@@ -38,4 +38,9 @@ public class SearchController {
     public ResponseEntity<List<PatientStudyFlatDto>> getStudyListByModality(@PathVariable String modality) {
         return ResponseEntity.ok(searchService.searchByModality(modality));
     }
+
+    @GetMapping("/patientID/{patientID}")
+    public ResponseEntity<List<PatientStudyFlatDto>> getStudyListByPatientID(@PathVariable String patientID) {
+        return ResponseEntity.ok(searchService.searchByPatientID(patientID));
+    }
 }

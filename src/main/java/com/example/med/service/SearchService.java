@@ -41,6 +41,14 @@ public class SearchService {
                 .orElse(List.of());
     }
 
+    @Transactional(readOnly = true)
+    public List<PatientStudyFlatDto> searchByPatientID(String patientID) {
+        if (patientID == null || patientID.isBlank()) return List.of();
+        String m = patientID.trim();
+        return Optional.ofNullable(dicomMapper.findPatientsWithStudiesByPatientID(m))
+                .orElse(List.of());
+    }
+
 //    public List<PatientInfoByModalityDto> getPatientInfoByModality(String modality) {
 //        return dicomMapper.findPatientInfoByModality(modality);
 //    }

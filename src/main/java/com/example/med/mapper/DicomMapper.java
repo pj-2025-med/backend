@@ -31,4 +31,5 @@ public interface DicomMapper {
     //List<PatientInfoByModalityDto> findPatientInfoByModality(@Param("modality") String modality);
     List<PatientInfo> findPatientInfoByModality(@Param("modality") String modality);
     List<PatientStudyFlatDto> findPatientsWithStudiesByModality(@Param("modality") String modality);
+    List<PatientStudyFlatDto> findPatientsWithStudiesByPatientID(@Param("patientID") String patientID);
 }

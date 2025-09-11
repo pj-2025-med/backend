@@ -47,7 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     log.debug("[JWT Filter] 쿠키: {}={}", cookie.getName(), cookie.getValue().substring(0, Math.min(20, cookie.getValue().length())) + "...")
             );
         } else {
-            log.warn("[JWT Filter] 쿠키가 없습니다. URI: {}", requestURI);
+            log.debug("[JWT Filter] 쿠키가 없습니다. URI: {}", requestURI);
         }
 
         String token = ExtractToken(request);
